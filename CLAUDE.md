@@ -73,7 +73,7 @@ Have strong takes, but pay market price or better. The edge comes from finding w
 
 - **Lineup requirements matter far more than PPR scoring.** Half vs. full PPR is close to noise: ~90% of top-12 RB/WR shift two spots or fewer between formats. Starting-slot counts are what reshape an economy. Don't let me over-index on the PPR question.
 - Every pick is also a pass on everything else. Drafting a QB in Round 1 means passing on the RB/WR who'd occupy that slot. Always think several rounds beyond the current pick: what's drying up, what has depth, who makes it back to me.
-- **ADP expectation curves:** each ADP slot carries a historical expected PPR/game by position. RB falls off sharply early then flattens; QB stays flat across huge stretches of the board. That flatness *is* supply and demand — it's why premium capital on onesies is expensive.
+- **ADP expectation curves:** each ADP slot carries a historical expected PPR/game by position. RB falls off sharply early then flattens; QB stays flat across huge stretches of the board. That flatness *is* supply and demand — it's why premium capital on onesies is expensive. **This assumes 1QB.** In superflex — which is *both* of my current leagues — QB demand roughly doubles and the flat QB curve no longer holds. QB stops being a onesie at all.
 - **VORP** is the framing, not a formula to draft from. Use it as *research*: pull multiple prior seasons, set baselines from my actual lineup requirements, and learn what my league structure rewards. Then draft reactively.
 - **League size:** shallower leagues (8–10 team) make early onesies (elite QB/TE) far more palatable — cheap opportunity cost, loaded waiver wire. Deeper leagues (14–16) push the opposite way, because the RB/WR edge grows.
 
@@ -126,13 +126,14 @@ The guide's read, and my working baseline. Treat these as live calls — recomme
 ## Formats I Play
 
 ### Redraft
-- Apply the Late-Round framework above as the default lens.
+- Apply the Late-Round framework above as the default lens — this is what it's built for.
+- Applies to my redraft leagues (Ligue pour Francis / Guillotine survivor when they re-form for 2026), **not** to Plugs or La grande dynastie.
 - Weekly optimization: starts, sits, streamers, waiver pickups.
 - Matchup-based streaming: defense, kicker, QB streaming.
 - Stacking is a best-ball/tournament tool — don't force it in season-long.
 
-### Dynasty
-The Late-Round guide does not cover dynasty. Use process concepts (variance, EV, opportunity cost) but keep valuation on dynasty-native inputs:
+### Dynasty & keeper
+**This is where both of my current leagues live**, so default here unless I say otherwise. The Late-Round guide does not cover dynasty — use its process concepts (variance, EV, opportunity cost) but keep valuation on dynasty-native inputs:
 - Long-term player value is primary — age curves, positional scarcity, rookie trajectory.
 - Key metrics: KTC value, dynasty ADP, age-adjusted production.
 - Aging curves: WR peak 24–27, RB peak 22–25, TE peak 25–28, QB longest runway.
@@ -144,9 +145,20 @@ The Late-Round guide does not cover dynasty. Use process concepts (variance, EV,
 
 ## My Leagues
 
+**Me on Sleeper:** `titi153` · user_id `470104804048236544`
+
+All settings below were verified live from the public Sleeper API, not inferred from code. **Rosters are live data — never hardcode them here.** Fetch on demand:
+
+```
+curl -s https://api.sleeper.app/v1/league/<league_id>/rosters
+curl -s https://api.sleeper.app/v1/league/<league_id>/users
+```
+
+Both leagues are 12-team, **half PPR**, and **superflex** — but their *economies* are fundamentally different, so the same player can carry very different value in each. Never carry a conclusion from one league to the other without re-deriving it.
+
 ### The League of Plugs — my most important league
 
-Verified live from the Sleeper API (2026 league `1367160708269117440`; 2025 predecessor `1182472182826283008`). Automations live in `../plug-golf` — see that repo's README for the keeper-cost tooling.
+**My team: Jaguar Hunter** (roster_id `10`). 2026 league `1367160708269117440`; 2025 predecessor `1182472182826283008`. Automations live in `../plug-golf` — see that repo's README for the keeper-cost tooling.
 
 | Setting | Value |
 |---|---|
@@ -169,9 +181,47 @@ The guide is built for **1QB, 12-team, half-PPR snake redraft**. This league mat
 - **What does transfer:** the process concepts. Expected value, variance and range of outcomes, "will this player burn me?", opportunity cost, tiers over ranks, being reactive, and the discipline of pricing against the market rather than reaching.
 - **Two flex plus a superflex** means lineup demand skews to whoever scores, and RB/WR depth matters more than the guide's 1QB/3WR baseline implies.
 
-### Other leagues
+### La grande dynastie — true dynasty
 
-- **La grande dynastie** — Sleeper `1312822394632552448`, 2026. Details not yet captured; ask me before advising on it.
+**My team: Rock of Love** (roster_id `5`). Sleeper `1312822394632552448` (2026; predecessor `1257167212314103808`). No automation repo.
+
+| Setting | Value |
+|---|---|
+| Platform | Sleeper, 12 teams |
+| Type | **Dynasty** (Sleeper `type: 2`) · 3-round rookie draft · no taxi, no IR |
+| Starters (9) | QB, RB, RB, WR, WR, TE, FLEX, FLEX, **SUPER_FLEX** — **no DEF** |
+| Bench | 15 (deep) |
+| Scoring | Half PPR (0.5/rec), 4pt pass TD, 6pt rush/rec TD, **−1 INT**, −2 fumble lost, 0.04/pass yd, 0.1/rush+rec yd, no TE premium |
+| Playoffs / deadline | 6 teams · trade deadline week 11 |
+
+#### How to approach this league — differently from Plugs
+
+This is the one league where the **Dynasty section below is the whole framework.** Value is pure long-term asset value: age curves, rookie picks, KTC, and an explicit rebuild / compete / reload posture. Nothing is priced by keeper cost, so a player's worth is simply what he'll produce and what he'll fetch.
+
+- **The Late-Round guide is close to irrelevant here.** It's a redraft product. Market Score, ADP-expectation curves, and draft-pocket strategy have no application. Only the process layer carries: expected value, range of outcomes, opportunity cost, being reactive.
+- **Superflex + no DEF + 15 bench spots** = QBs are the scarcest asset in the league and stay valuable for years (longest runway of any position on the age curve). Never apply 1QB QB-value intuitions here.
+- **Deep benches reward stashing** — rookies and post-hype youth can be held long enough to develop, which raises the value of speculative youth relative to a shallow league.
+- **−1 INT** (vs. −2 in Plugs) is a mild bump for volume passers. Minor, but it's a real difference between my two leagues.
+- Trade logic: buy youth and upside, sell aging vets at peak perceived value, and be honest about which side of the contention window I'm on before making either move.
+
+### Redraft leagues — not yet created for 2026
+
+In 2025 I also played **Ligue pour Francis** (12-team redraft) and **Guillotine survivor** (18-team). Neither exists on Sleeper for 2026 yet — redraft leagues typically form in August. **These are where the Late-Round guide fully applies**, snake draft and all. When one appears, pull its settings live and document it here before drafting.
+
+Check with:
+```
+curl -s https://api.sleeper.app/v1/user/470104804048236544/leagues/nfl/2026
+```
+
+### Applying the right lens
+
+| | League of Plugs | La grande dynastie |
+|---|---|---|
+| Economy | Keeper cost (9 max / 26-cost cap, +1 per year kept) | Pure dynasty asset value |
+| Primary lens | Dynasty valuation **constrained by keeper cost** | Dynasty valuation, unconstrained |
+| Late-Round guide | Process concepts only — **not** the 2026 QB takes | Process concepts only |
+| Edge comes from | Cheap production; exploiting teams over the 26 cap | Age curves, picks, contention timing |
+| Roster | 10 starters (incl. DEF), 10 bench | 9 starters (no DEF), 15 bench |
 
 ---
 
