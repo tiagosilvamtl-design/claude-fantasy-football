@@ -317,10 +317,24 @@ Rookie picks are `position: "RDP"` (e.g. `2026 Early 1st`). **Values are live an
 
 ### The League of Plugs model: optimal-9, not top-9
 
-**A team's real strength is the best 9 players it can afford under the 26-cost cap** — a knapsack, not a ranking. Sorting by rank and taking the top 9 gives wrong answers and I've made that mistake:
+**A team's real strength is the best 9 players it can afford under the 26-cost cap** — a knapsack, not a ranking. Sorting by rank and taking the top 9 gives wrong answers: the Trade Radar shows PAS "over cap at 39," but their optimal nine is the league's best at cost 24, because they simply don't keep McCaffrey (cost 9), Henry (10), Pollard (5), Andrews (7).
 
-- The Trade Radar showed PAS "over cap at 39." **They are not stuck.** Their optimal nine is the best in the league at cost 24 — they simply don't keep McCaffrey (cost 9), Henry (10), Pollard (5), Andrews (7). Every over-cap team has the same escape hatch.
-- **Therefore cap pressure is NOT leverage.** Every team fixes itself internally by cutting its expensive junk. Never pitch a trade whose premise is "they're desperate for cap relief." They aren't.
+### Cap pressure IS leverage — via at-risk value
+
+**Not keeping a player is a 100% loss, not a free escape hatch.** This is the correction to my earlier read (Tiago, 2026-07-16), and it's the most important dynamic in this league.
+
+**At-risk value** = KTC of every player *outside* a team's optimal nine. They're gone unless traded. As of 2026-07-16 every team is sitting on **13k–26k of at-risk KTC**; mine was 22,075 — **45% of my own keeper-9 value**. This evaporates silently every season.
+
+Two exploitable consequences:
+
+1. **Everyone is a motivated seller of their unkeepable players.** Anything above zero beats losing them. PAS will lose McCaffrey (5,048, cost 9); Saquon will lose Barkley (4,941, cost 8); Egbukakeeeeee will lose Tyler Shough (**4,835 at cost 1** — their nine is just too stacked). Buy these for late picks. **Hunt cheap at-risk players on stacked teams every offseason — a loaded roster sheds good cost-1 assets it physically cannot keep.**
+2. **Sell my own at-risk players before they evaporate.** A late 3rd for a player I'm about to lose is free value. Check the *buyer's* keeper bar, not mine.
+
+**Cap space is an option, and it has real value.** A team with slack can absorb an expensive asset others must dump — cheap, because the seller's alternative is zero — hold it through the keeper lock, and then flip it **in-season, when the cap no longer binds and it's worth full market**. Sitting at 26/26 (where I am) means zero optionality. Getting under the cap is worth more than the roster math alone shows.
+
+### The keeper bar: who can actually use a player
+
+**A player only has trade value to a team whose weakest keeper he'd beat.** My bar is my 9th-best keeper's KTC; theirs is theirs. Below the bar, a player is worth nothing to that team no matter what KTC says — Jeudy, Aiyuk, and Rodgers clear *nobody's* bar and are genuinely worthless. Always check the bar before pricing anything.
 
 ### You cannot pay a stacked team in KTC
 
@@ -342,6 +356,7 @@ The single most important trade constraint here. **An incoming player only helps
 Find where price diverges from probable outcome — while respecting that price carries real information.
 
 ### Buy signals
+- **An at-risk player on someone else's roster** *(Plugs)* — outside their optimal nine, so they lose him for nothing and will take a late pick. Free value if he clears my keeper bar
 - KTC price below what age + role justify — youth the market hasn't repriced yet
 - **Cheap keeper cost relative to KTC** *(Plugs)* — the core edge; cost-1 and cost-2 studs compound
 - Median projection matches ADP but the upside scenarios dwarf the downside ones (range-of-outcomes value)
@@ -353,6 +368,7 @@ Find where price diverges from probable outcome — while respecting that price 
 - Market Score above ADP-implied expectation, same position *(redraft only)*
 
 ### Sell / avoid signals
+- **My own at-risk players** *(Plugs)* — anyone outside my optimal nine. Sell before the keeper lock or lose them for zero; a 4th-rounder beats nothing
 - KTC inflated by hype, not production
 - **Expensive keeper cost relative to KTC** *(Plugs)* — cost escalation is a shot clock; sell before the +1s compound
 - Decline phase of the age curve — RBs post-27, WRs post-30; and any aging player whose cost is climbing
@@ -376,6 +392,7 @@ Find where price diverges from probable outcome — while respecting that price 
 Use these as starting points when I bring data or questions:
 
 - **Trade analysis:** "Here's a trade offer — evaluate it from both sides, give me a verdict, and tell me if there's a counter I should propose instead."
+- **At-risk sweep (Plugs, run before the keeper lock):** "Fetch KTC, compute every team's optimal nine, and list (a) my at-risk players with the teams whose keeper bar they'd clear, and (b) at-risk players elsewhere that clear my bar." This is the highest-EV recurring exercise in the league — it's free value on both sides.
 - **Waiver priority:** "Here are my top waiver targets — rank them for my specific roster need and explain the tiebreaker."
 - **Pre-draft prep:** "My draft is [date] — help me build tiers for [format] and identify the value pockets."
 - **Draft-day reactive help:** "Here's what's gone off the board and my roster — what's the highest-EV pick and which tier is about to break?"
