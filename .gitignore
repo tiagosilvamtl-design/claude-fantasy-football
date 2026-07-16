@@ -1,0 +1,5 @@
+# Late-Round Draft Guide is a paid, personal-use-only product — do not commit or
+# redistribute. The PDF is also ~72MB, which would permanently bloat git history.
+# Keep it local; regenerate the extracted text with reference/extract-guide.sh
+*.pdf
+reference/late-round-*-text.md
