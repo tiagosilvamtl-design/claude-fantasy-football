@@ -276,7 +276,7 @@ Guide rankings baseline: half PPR, 12-team, 1QB / 2RB / 3WR / 1TE / 1FLEX. Aucti
 | **FantasyPros** | Consensus rankings, ECR, ADP, expert accuracy tracking |
 | **Rotowire** | Injury reports, depth charts, beat reporter notes |
 | **TheRinger / The Athletic** | Film-based analysis, contrarian takes, writer tendencies |
-| **KeepTradeCut (KTC)** | Dynasty player values, trade calculator, positional rankings |
+| **KeepTradeCut (KTC)** | **The trade currency for both leagues.** See the KTC section below |
 | **Discord channels** | Sharp community takes, news reactions, fades, ADP shifts |
 
 When I paste data from these sources, help me extract what's actionable and flag anything that shifts my prior.
@@ -297,25 +297,70 @@ Remember social proof: a room converging on a take is not evidence the take is r
 
 ---
 
+## Valuing Trades: KTC Is the Currency
+
+**KTC is the default valuation tool for all trade analysis in both leagues.** It's a dynasty trade-value market, which is what my leagues actually are. Rankings (FantasyPros, ETR) are *opinions* — useful as a second read and for spotting where the market disagrees with itself. KTC is *price*.
+
+Don't value trades in ETR auction dollars. Those are a redraft-auction currency and they mis-rank dynasty assets.
+
+### Fetching
+
+```
+reference/fetch-ktc.py --show 20     # writes reference/ktc-values.json
+```
+
+KTC renders client-side, so the HTML table is empty — but the page ships the whole dataset in a `playersArray = [...]` literal in the source. The script reads that (464 players + 36 rookie picks). It shells out to `curl` because macOS system Python is linked against LibreSSL and fails KTC's TLS handshake.
+
+**Use `superflexValues.value`.** Both my leagues are superflex with **no TE premium**, and that field is exactly that. Do **not** use `oneQBValues` (wrong format) or the `tep`/`tepp`/`teppp` variants (TE premium — not my leagues). This is cleaner than ETR's `SF/TE Prem` column, which bundles a TE bump that doesn't apply and inflates TEs ~4-7 spots.
+
+Rookie picks are `position: "RDP"` (e.g. `2026 Early 1st`). **Values are live and drift within hours — re-fetch before any real decision and note the timestamp.**
+
+### The League of Plugs model: optimal-9, not top-9
+
+**A team's real strength is the best 9 players it can afford under the 26-cost cap** — a knapsack, not a ranking. Sorting by rank and taking the top 9 gives wrong answers and I've made that mistake:
+
+- The Trade Radar showed PAS "over cap at 39." **They are not stuck.** Their optimal nine is the best in the league at cost 24 — they simply don't keep McCaffrey (cost 9), Henry (10), Pollard (5), Andrews (7). Every over-cap team has the same escape hatch.
+- **Therefore cap pressure is NOT leverage.** Every team fixes itself internally by cutting its expensive junk. Never pitch a trade whose premise is "they're desperate for cap relief." They aren't.
+
+### You cannot pay a stacked team in KTC
+
+The single most important trade constraint here. **An incoming player only helps the other team if he cracks their optimal nine.** Sending PAS 1.35× KTC value for a stud still drops their optimal-9 by ~5,000, because the pieces I'd send are worse than their 9th-best player. KTC sums are meaningless to a loaded roster.
+
+**So the only real trade partners are teams whose nine my players would actually improve** — the weak ones. Check this before proposing anything.
+
+### Other rules that hold
+
+- **Consolidation premium:** in a 2-for-1, the side receiving *fewer* players must send **~1.15× or more** in KTC. Two-for-one at even value is a decline. Corollary: with only 9 keeper slots, **quantity beyond 9 is worthless** — 1-for-2 trades make a flat roster flatter and are almost always wrong for me.
+- **Cost travels with the player** in a trade, and escalates +1/year. So an expensive player is a *liability* to acquire, and a cheap young stud is the scarcest asset class. Price the escalation: a cost-6 player is 7 next year and 8 the year after.
+- **Forced churn:** nine keepers at 26 cost become 35 next year automatically. I can never keep the same nine — roughly three must turn over every season. This is why rookie picks and cost-1 youth are the only sustainable currency, and why win-now buys of expensive vets are a two-year window at best.
+- **Source disagreement is signal.** The shared Plug Golf Tracker has an FP Rankings tab, so FP is plausibly what my leaguemates anchor to. Where FP diverges from KTC, that's a negotiating edge — e.g. FP has McBride at 34 while KTC has him rk17, so the room undervalues him. When sources disagree without a clear reason, the honest stance is **neutral**.
+
+---
+
 ## Market Inefficiency Framework
 
 Find where price diverges from probable outcome — while respecting that price carries real information.
 
 ### Buy signals
+- KTC price below what age + role justify — youth the market hasn't repriced yet
+- **Cheap keeper cost relative to KTC** *(Plugs)* — the core edge; cost-1 and cost-2 studs compound
 - Median projection matches ADP but the upside scenarios dwarf the downside ones (range-of-outcomes value)
-- Market Score meaningfully above ADP-implied expectation, within the same position
 - Injury to a teammate creates a path to targets/carries the market hasn't priced yet
 - Ambiguous backfield or WR corps the market is discounting for uncertainty — uncertainty cuts both ways
-- Age curve says a player still has 2–3 peak years but perception has declined *(dynasty)*
-- Community selling on one bad season, not structural decline *(dynasty)*
+- Age curve says a player still has 2–3 peak years but perception has declined
+- Community selling on one bad season, not structural decline
+- **FP rates him well below KTC** — the room is anchored on the FP tab in the shared sheet
+- Market Score above ADP-implied expectation, same position *(redraft only)*
 
 ### Sell / avoid signals
-- KTC or ADP inflated by hype, not production
-- Market Score well below ADP-implied expectation
-- A player with no realistic ceiling that would burn me — especially in the middle/late rounds
+- KTC inflated by hype, not production
+- **Expensive keeper cost relative to KTC** *(Plugs)* — cost escalation is a shot clock; sell before the +1s compound
+- Decline phase of the age curve — RBs post-27, WRs post-30; and any aging player whose cost is climbing
 - Scheme change reduces role without market catching up
-- Decline phase of the age curve — RBs post-27, WRs post-30 *(dynasty)*
-- Value tied to a coach or QB likely to leave *(dynasty)*
+- Value tied to a coach or QB likely to leave
+- **FP rates him well above KTC** — sell into the room's anchor
+- A player with no realistic ceiling that would burn me *(redraft, middle/late rounds)*
+- Market Score well below ADP-implied expectation *(redraft only)*
 
 ### Draft strategy
 - Attack the right *pocket* of the draft, not the perfect player — think in tiers
