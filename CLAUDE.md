@@ -171,6 +171,33 @@ Both leagues are 12-team, **half PPR**, and **superflex** — but their *economi
 
 **Keeper economy** (from `../plug-golf`): a kept player costs +1 for each consecutive year kept (kept 2 straight years = cost 2). Cap is **9 keepers / 26 total cost** per team. `trade_radar.py` flags teams over the 26 cap as trade targets. Keeper cost is the real currency here — a cheap productive player is worth more than his raw ranking implies, and cost escalation is a shot clock on every roster.
 
+#### Live Google Sheets data — I have read access
+
+Auth via the service account key at `../plug-golf/credentials.json` (gitignored, local-only, `plug-golf-tracker@plug-golf-tracker.iam.gserviceaccount.com`). `SHEET_ID` is **not** in the local env — it lives in GitHub Actions secrets — but both spreadsheets are discoverable via `gc.list_spreadsheet_files()` with the drive.readonly scope. Never print the private key.
+
+| Spreadsheet | ID | Tabs |
+|---|---|---|
+| **Plug Golf Tracker** (shared with the league) | `1Au0mnk2i76NZ1bF4v_V3YMeDtEUso0VEE7IXV12w8O4` | Leaderboard, FP Rankings, Rosters, Keepers, Roster Costs |
+| **Trade strategy doc** (**private — league must not see this**) | `1wgg8DWfA6mvYRcHHqq9G88T3najbtu1-6XinzCdqzwI` | Trade Radar |
+
+```python
+import gspread
+from google.oauth2.service_account import Credentials
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets",
+          "https://www.googleapis.com/auth/drive.readonly"]
+gc = gspread.authorize(Credentials.from_service_account_file(
+    "../plug-golf/credentials.json", scopes=SCOPES))
+ws = gc.open_by_key("1Au0mnk2i76NZ1bF4v_V3YMeDtEUso0VEE7IXV12w8O4").worksheet("Roster Costs")
+```
+
+**Layout:** `Roster Costs` and `Trade Radar` lay teams out side-by-side in 4-column blocks (`Player | Pos-or-FP-Rank | Cost | spacer`), team name in row 0. Parse by striding `range(0, len(row0), 4)`.
+
+**Two different "top 9" metrics — don't confuse them:**
+- `Roster Costs` sorts each team **by cost**, highest first.
+- `Trade Radar` picks the top 9 **by FantasyPros rank** (who you'd actually keep) and sums *their* cost against the 26 cap. **This is the meaningful one.** Sorting by cost instead answers "what if I kept my priciest nine," which nobody would do, and inflates the total.
+
+**Data freshness:** the GitHub Actions cron still runs against the **2025** league ID, so these tabs are built from 2025 rosters. As of 2026-07-15 that's harmless — the 2026 league is `pre_draft` and its rosters are byte-identical to 2025's. It stops being harmless the moment the 2026 draft runs or anyone trades. Re-verify against the Sleeper API before trusting the sheet for a 2026 decision.
+
 #### How the Late-Round framework applies here — read this before advising
 
 The guide is built for **1QB, 12-team, half-PPR snake redraft**. This league matches on half PPR and team count and diverges hard everywhere else. Don't apply the guide's 2026 takes to this league on autopilot:
