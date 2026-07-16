@@ -142,9 +142,42 @@ The Late-Round guide does not cover dynasty. Use process concepts (variance, EV,
 
 ---
 
+## My Leagues
+
+### The League of Plugs — my most important league
+
+Verified live from the Sleeper API (2026 league `1367160708269117440`; 2025 predecessor `1182472182826283008`). Automations live in `../plug-golf` — see that repo's README for the keeper-cost tooling.
+
+| Setting | Value |
+|---|---|
+| Platform | Sleeper, 12 teams |
+| Type | **Keeper** (Sleeper `type: 1`), 9 keepers max, **3-round draft** |
+| Starters (10) | QB, RB, RB, WR, WR, TE, FLEX, FLEX, **SUPER_FLEX**, DEF |
+| Bench | 10 · no taxi, no IR |
+| Scoring | **Half PPR** (0.5/rec), 4pt pass TD, 6pt rush/rec TD, −2 INT, −2 fumble lost, 0.04/pass yd, 0.1/rush+rec yd, no TE premium |
+| Playoffs / deadline | 6 teams · trade deadline week 11 |
+
+**Keeper economy** (from `../plug-golf`): a kept player costs +1 for each consecutive year kept (kept 2 straight years = cost 2). Cap is **9 keepers / 26 total cost** per team. `trade_radar.py` flags teams over the 26 cap as trade targets. Keeper cost is the real currency here — a cheap productive player is worth more than his raw ranking implies, and cost escalation is a shot clock on every roster.
+
+#### How the Late-Round framework applies here — read this before advising
+
+The guide is built for **1QB, 12-team, half-PPR snake redraft**. This league matches on half PPR and team count and diverges hard everywhere else. Don't apply the guide's 2026 takes to this league on autopilot:
+
+- **Superflex breaks the guide's headline QB advice.** The guide's "late-round QB rebound" — and "don't spend a Round 2 pick on Josh Allen" — is explicitly reasoned from 1QB supply and demand. This league starts up to **two** QBs, roughly doubling QB demand (~24 QB starters vs. 12). That inverts the premise. **Do not repeat the late-round-QB take here.** The guide's own logic (analyze your league's economy; published rankings don't adjust enough for structure) is what says to discard it.
+- **It's a keeper league with a 3-round draft, not a 20-round snake.** The guide's draft-pocket and ADP-extraction advice has very little surface area. Value is made in keeper decisions and trades, not on draft day.
+- **In practice it behaves closer to dynasty than redraft** — 9 keepers with cost escalation. `../plug-golf` correctly uses FantasyPros *dynasty superflex* rankings. Lean on the dynasty section and dynasty-native inputs (KTC, age curves) for valuation here; Market Score and the ADP-expectation curves are redraft tools and **do not** transfer.
+- **What does transfer:** the process concepts. Expected value, variance and range of outcomes, "will this player burn me?", opportunity cost, tiers over ranks, being reactive, and the discipline of pricing against the market rather than reaching.
+- **Two flex plus a superflex** means lineup demand skews to whoever scores, and RB/WR depth matters more than the guide's 1QB/3WR baseline implies.
+
+### Other leagues
+
+- **La grande dynastie** — Sleeper `1312822394632552448`, 2026. Details not yet captured; ask me before advising on it.
+
+---
+
 ## Know My League Before Anything Else
 
-Never give draft advice without these. Ask if I haven't said:
+For any league not documented above, never give draft advice without these. Ask if I haven't said:
 
 1. **Starting lineup requirements** — the single most important input. Drives the whole economy.
 2. **League size** — 8/10/12/14/16 changes onesie math and waiver quality.
@@ -161,6 +194,8 @@ Guide rankings baseline: half PPR, 12-team, 1QB / 2RB / 3WR / 1TE / 1FLEX. Aucti
 | Source | What I use it for |
 |---|---|
 | **Late-Round Draft Guide (this repo)** | Core framework, Market Score, ADP expectation, tiers, 2026 targets/avoids |
+| **`../plug-golf` repo** | League of Plugs: keeper costs, roster costs, trade radar (over-cap teams), golf side-game. Sleeper + FantasyPros dynasty-superflex pulls |
+| **Sleeper API** (public, read-only) | Authoritative live league settings, rosters, keepers. `api.sleeper.app/v1/league/<id>` |
 | **FantasyPros** | Consensus rankings, ECR, ADP, expert accuracy tracking |
 | **Rotowire** | Injury reports, depth charts, beat reporter notes |
 | **TheRinger / The Athletic** | Film-based analysis, contrarian takes, writer tendencies |
