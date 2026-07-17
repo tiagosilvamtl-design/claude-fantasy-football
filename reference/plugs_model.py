@@ -23,11 +23,22 @@ PRICE vs VALUE — the core method. Do not collapse these into one number.
     My keeper-9  -> optimize on analyst value (who's actually best).
     Their bar / will-they-accept -> model on KTC (what they perceive).
 
+THE KEEPER-9 IS NOT A LINEUP. Do not apply positional filters to it.
+    Roster = 20. Keepers = 9. The other 11 come from the 11-round draft.
+    The starting lineup (QB/RB/RB/WR/WR/TE/FLEX/FLEX/SF/DEF) is drawn from
+    all 20, not from the 9.
+    => Keep the 9 best ASSETS regardless of position. A positional gap is a
+       DRAFT problem, and the draft fills it at cost 1.
+    => Rejecting a trade because it leaves "only 1 RB in the keeper-9" is a
+       category error. I made it repeatedly on 2026-07-16 and it silently
+       killed good trades (options A and B in the Egbukakeeeeee analysis).
+    Report positional shape as INFORMATION (see roster_shape) — never as a
+    filter.
+
 WHAT THIS MODEL DOES NOT KNOW (state these when reporting output):
-  - Lineup slots. It maximizes a value number, not starting-lineup points.
-    Nine WRs would score great here and be unstartable.
   - Positional scarcity/need for the OTHER team. No number here sees that a
-    team with one RB desperately needs a second.
+    team with one RB desperately needs a second. Tiago's read on his
+    leaguemates is better than any of this.
   - Draft availability. The reset rule makes every keeper decision a
     forecast of "would he last until my next pick?" -- a human read.
   - In-season value. The cap is off after Aug 31.
@@ -120,8 +131,9 @@ def optimal_nine(roster, key="ktc"):
             "ktc"   for modelling THEIR behaviour (what they perceive).
     returns (total, cost, set_of_names)
 
-    NOTE: right model for cap feasibility, WRONG model for lineup
-    construction — it has no concept of starting slots.
+    Ignoring position is CORRECT, not a limitation: the keeper-9 is not a
+    lineup (see module docstring). Don't "fix" this by adding positional
+    constraints.
     """
     dp = {(0, 0): (0, ())}
     for name, p in roster.items():
@@ -140,6 +152,33 @@ def optimal_nine(roster, key="ktc"):
     nine = [(k, v) for k, v in dp.items() if k[0] == SLOTS]
     best = max(nine, key=lambda x: x[1][0]) if nine else max(dp.items(), key=lambda x: x[1][0])
     return best[1][0], best[0][1], set(best[1][1])
+
+
+def roster_shape(roster, selection=None):
+    """Positional composition — REPORT THIS, never filter on it.
+
+    A gap here is a draft problem, not a reason to reject a trade: 11 draft
+    rounds fill the other 11 roster spots, and drafted players cost 1.
+
+    Returns {"QB": n, "RB": n, "WR": n, "TE": n} for the selection (default:
+    the whole roster).
+    """
+    names = selection if selection is not None else roster.keys()
+    out = {}
+    for n in names:
+        p = roster[n]["pos"]
+        out[p] = out.get(p, 0) + 1
+    return out
+
+
+def draft_fills(pool, pos, top=5):
+    """What the draft could give me at `pos`, at cost 1.
+
+    Use this INSTEAD of rejecting a trade for a positional gap. pool is the
+    league-wide at-risk list (see at_risk across all teams) plus rookies.
+    """
+    c = [(p["ktc"], n) for n, p in pool.items() if p["pos"] == pos]
+    return sorted(c, reverse=True)[:top]
 
 
 def keeper_bar(roster):

@@ -143,6 +143,14 @@ Both leagues are 12-team, **half PPR**, **superflex** — but their economies di
 
 **Cap space is an option.** Since the cap binds only Aug 31 and never in-season, a team with slack can absorb an expensive asset others must dump, hold it through the lock, and flip it in-season at full market. At 26/26 I have zero optionality.
 
+#### The keeper-9 is NOT a lineup
+
+**Roster = 20. Keepers = 9. The other 11 come from the 11-round draft.** The starting lineup (QB/RB/RB/WR/WR/TE/FLEX/FLEX/SF/DEF) is drawn from all 20 — not from the 9.
+
+> **Keep the 9 best assets regardless of position. A positional gap is a draft problem, and the draft fills it at cost 1.**
+
+Rejecting a trade because it leaves "only 1 RB in the keeper-9" is a **category error**. I made it repeatedly on 2026-07-16 and it silently killed good trades — options A and B in the Egbukakeeeeee analysis were dismissed on this basis and were in fact the best value on the board. **Report positional shape as information; never filter on it** (`roster_shape()`). When a trade opens a positional gap, price what the draft would fill it with (`draft_fills()`) rather than vetoing the trade.
+
 #### The Plugs model — `reference/plugs_model.py`
 
 - **Optimal-9, not top-9.** A team's real strength is the best nine it can *afford* under 26 — a knapsack. Ranking-order top-9 gives wrong answers: the Trade Radar shows PAS "over cap at 39," but their optimal nine is the league's best at cost 24, because they simply don't keep McCaffrey (9), Henry (10), Pollard (5), Andrews (7).
