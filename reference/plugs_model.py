@@ -235,13 +235,26 @@ def keeper_bar(roster):
 
 
 def at_risk(roster):
-    """Players outside the optimal nine — released unless traded.
+    """Players outside the optimal nine.
 
-    IMPORTANT: released != worthless. They enter the draft pool at cost 1,
-    and the owner may re-draft them. Their value to the owner is
-    (what a trade fetches) vs (odds of re-drafting them), which depends on
-    draft position. For a team picking late, that's near zero. For a team
-    picking early, it may be better to let him go and take him at cost 1.
+    DO NOT read this as "free value they'll lose for nothing" — that was
+    wrong (Tiago, 2026-07-16). Owners CONVERT at-risk value: they keep him,
+    sell him to a weaker team for picks, or package him 2-for-1 to upgrade.
+
+      cheap + wanted  -> gets TRADED, never reaches the pool. An auction, and
+                         my bar is the league's 2nd-highest so I usually lose
+                         it (Shough: 11 takers; I bid +855, Shrimp +2275).
+      expensive       -> genuinely stranded; the COST strands him. This is
+                         what actually hits the pool (McCaffrey c9: 3 takers,
+                         DJ Moore c8: 1 taker). Better DRAFTED at cost 1 than
+                         traded for at cost 9.
+      near the bar    -> NOISE. Pearsall was 76 KTC below JohnnyG's #9 and
+                         clearly better by expert value. Owner preference
+                         decides; ask Tiago.
+
+    Even stranded players have a buyer: a REBUILDING team with cap slack can
+    absorb them cheap, hold through the Aug 31 lock, and flip them in-season
+    when the cap no longer binds.
     """
     _, _, sel = optimal_nine(roster)
     return {n: p for n, p in roster.items() if n not in sel}

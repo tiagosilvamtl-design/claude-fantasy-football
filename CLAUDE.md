@@ -69,7 +69,7 @@ Rankings are linear; value is not (guide p13). A 130-rank gap at rank 300 is noi
 ### Buy signals
 
 - **Experts above KTC price** — the core signal. Report the spread with it
-- **An at-risk player on another roster** *(Plugs)* — outside their optimal nine, so they lose him unless traded. But see the reset rule: their floor isn't zero, and he may have a market
+- **An at-risk player on another roster** *(Plugs)* — **but only if he's EXPENSIVE and therefore stranded** (McCaffrey cost 9, DJ Moore cost 8). Cheap at-risk players get traded, not gifted — they're auctions I usually lose. See "At-risk value" below
 - **Cheap keeper cost relative to value** *(Plugs)* — cost-1 and cost-2 studs are the most efficient assets in the league
 - Youth the market hasn't repriced; age curve says 2–3 peak years left but perception has declined
 - Injury to a teammate opening a path the market hasn't priced
@@ -147,12 +147,29 @@ Both leagues are 12-team, **half PPR**, **superflex** — but their economies di
 - **But the reset doesn't save you on studs.** A 7,000+ KTC player would be a top-5 pool pick — you could never safely release him. For those, escalation is real: his share of the cap climbs every year. That's why cost-2 studs >> cost-6 studs.
 - This makes keeper decisions a **draft-availability forecast**, not a cap optimization. That's a human read — ask me for it.
 
-**At-risk value isn't destroyed, it's redistributed at cost 1.** With 132 picks against ~85 released players plus rookies, nearly everyone is re-drafted. So:
-- An at-risk player's value to his owner = what a trade fetches **vs. odds of re-drafting him**. Not zero — but low for a team picking late.
-- **The draft is where cost-efficiency is created.** Drafted players are cost 1 — the cheapest entry point for any asset. This is why picks matter, and why picks 1–6 coming from the **golf side-game** make it a real, separately winnable lever.
-- **Trading for an expensive player is usually wrong** — you inherit his cost when you could often draft him at 1 instead.
+#### At-risk value: owners CONVERT it, they don't lose it
 
-**Cap space is an option.** Since the cap binds only Aug 31 and never in-season, a team with slack can absorb an expensive asset others must dump, hold it through the lock, and flip it in-season at full market. At 26/26 I have zero optionality.
+**At-risk** = players outside a team's optimal nine. My first read — "they lose him for nothing, so buy him for a late pick" — is **wrong** (Tiago, 2026-07-16). Owners are active: they keep him, sell him to a weaker team for picks, or package him in a **2-for-1 to upgrade**. Nobody lets a useful player evaporate. At-risk value gets **converted**, not destroyed.
+
+It splits into two genuinely different things:
+
+**Cheap + wanted → gets TRADED. Never reaches the pool. NOT free.**
+Tyler Shough (cost 1 — **11 teams' nines improve with him**), Pearsall (cost 2, 7 takers), RJ Harvey, Gadsden, Corum, Worthy. These are **auctions, and I'm usually the worst bidder**: my keeper bar is the league's 2nd-highest, so a marginal player adds less to me than to almost anyone. I bid +855 on Shough; Shrimp Alfredo bids +2,275.
+
+**Expensive → mostly stranded. The COST is what strands them.**
+McCaffrey (cost 9, 3 takers), DJ Moore (cost 8, **1 taker**), McLaurin (cost 7, 2 takers), Barkley (cost 8). Nobody can absorb that cost inside the cap. **These are what actually hits the draft pool** — the expensive leftovers, not the cheap studs.
+
+> **The pool is the inverse of what I assumed.** The 1.04's real value isn't a rookie — it's that **the reset rule turns a cost-9 albatross into a cost-1 asset, and only the draft does that.** McCaffrey at cost 1 is the arbitrage. **Trading for an expensive player is usually wrong** — you inherit his cost when you could draft him at 1.
+
+**Even stranded players have one buyer: a REBUILDING team with cap slack.** They absorb McCaffrey at minimal cost, hold him through the Aug 31 lock, then **flip him in-season at full market — the cap doesn't bind in-season.** That's cap space as an option, and it's real. At 26/26 I have none.
+
+**Near the bar, at-risk status is NOISE.** KTC had Pearsall (3,503) below Quentin Johnston (3,579) — 76 points at JohnnyG's #9/#10 line, a rounding error — while expert value flips it hard (4,121 vs 3,452). I called Pearsall at-risk; his owner will obviously keep him. **Only players well below the bar are genuinely at-risk. Owner preference decides the rest — ask Tiago, he knows his leaguemates.**
+
+#### The 2-for-1 upgrade is universal behaviour
+
+**Any team with a logjam at its keeper bar will package two near-bar players to upgrade to one better player.** Normal behaviour for everyone, not one owner's quirk. JohnnyG has five clustered at 3,285–3,608 (Pearsall, Johnston, Worthy, Harvey, Corum) fighting for one slot — they're a **consolidating buyer**, not a seller of Pearsall for a pick.
+
+Before pitching anyone, ask: **is this team a consolidator?** If their nine is logjammed at the bar, the question isn't "what will they give me for X" — it's **"do I have one player worth two of their near-bar guys?"**
 
 #### Cost: the sources don't know it exists
 
@@ -361,7 +378,7 @@ When I paste threads: summarize the consensus, identify contrarian signals and *
 ## Workflow Prompts
 
 - **Trade analysis:** "Evaluate from both sides, verdict, and the counter I should propose instead."
-- **At-risk sweep (Plugs, before the Aug 31 lock):** "Fetch KTC, compute every team's optimal nine, list (a) my at-risk players with the teams whose bar they'd clear, (b) at-risk players elsewhere that clear my bar." Highest-EV recurring exercise in the league.
+- **At-risk sweep (Plugs, before the Aug 31 lock):** "Fetch KTC, compute every team's optimal nine, list my at-risk players with the teams whose bar they'd clear." Useful for *selling* mine. **Not a buy list** — cheap at-risk players get traded in an auction I usually lose; only expensive stranded ones (cost 7+) are gettable, and those are better drafted at cost 1.
 - **Price/value sweep:** "Where do the three experts most disagree with KTC, and what's the spread?"
 - **Waiver priority:** "Rank for my roster need and explain the tiebreaker."
 - **Pre-draft prep:** "Build tiers for [format] and identify the value pockets."
