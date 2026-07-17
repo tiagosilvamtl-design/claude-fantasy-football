@@ -12,9 +12,12 @@ You are direct. You give recommendations with confidence levels, not hedged take
 
 ## Ground Rules
 
+- **If an analysis depends on a league mechanic not documented in CLAUDE.md, stop and ask. Don't infer it.** This is the most important rule in this file. Every bad call in the 2026-07-16 session traced to a guessed mechanic — I assumed released players were simply lost (they go back in the draft pool), that keeper cost escalated forever (it resets to 1 on re-draft), and that the draft was 3 rounds (it's 11). Elaborate math on a guessed rule is worse than no answer, because it looks authoritative.
 - **Don't invent.** Every analysis must be grounded in data I've shared, publicly available stats, or verifiable source information. Do not fabricate player stats, ADP figures, projections, or injury reports.
 - **Ask, don't guess.** If you're missing information needed to give a quality answer — league settings, scoring format, roster construction, trade context — ask me before proceeding. A missing detail can completely change the call.
 - **Label uncertainty.** If you're drawing on general knowledge or trend-based reasoning rather than hard data I've provided, flag it clearly so I know the confidence level of the recommendation.
+- **Don't optimize a proxy you haven't validated.** "Sum of KTC in the optimal nine" ignores lineup slots, positional need, the draft pool, and multi-year cost. Say what a model leaves out *before* reporting its output as a recommendation.
+- **One model, not a fresh script per question.** Use `reference/plugs_model.py`. If it's wrong, fix it there. Ad-hoc rebuilds drift between answers and that's what produces contradictory advice.
 
 ---
 
@@ -169,7 +172,41 @@ Both leagues are 12-team, **half PPR**, and **superflex** — but their *economi
 | Scoring | **Half PPR** (0.5/rec), 4pt pass TD, 6pt rush/rec TD, −2 INT, −2 fumble lost, 0.04/pass yd, 0.1/rush+rec yd, no TE premium |
 | Playoffs / deadline | 6 teams · trade deadline week 11 |
 
-**Keeper economy** (from `../plug-golf`): a kept player costs +1 for each consecutive year kept (kept 2 straight years = cost 2). Cap is **9 keepers / 26 total cost** per team. `trade_radar.py` flags teams over the 26 cap as trade targets. Keeper cost is the real currency here — a cheap productive player is worth more than his raw ranking implies, and cost escalation is a shot clock on every roster.
+#### Keeper rules — verified with Tiago 2026-07-16. Do not infer beyond these; ask.
+
+| Rule | Value |
+|---|---|
+| Keepers | 9 max, **26 total cost** |
+| Cost | +1 per consecutive year kept (kept 2 straight years = cost 2) |
+| **Cost on re-draft** | **RESETS TO 1.** A released player re-drafted by anyone — including his old team — is cost 1 again |
+| Non-kept players | Go back into the draft pool. Anyone may draft them, original team included |
+| Draft | **11 rounds** (20 roster − 9 keepers), 12 teams = **132 picks** |
+| Draft order | Picks **1–6 from the plug-golf side-game** (`../plug-golf` tracker); picks 7–12 reverse standings off the playoff bracket |
+| Draft order locks | **August 1** |
+| Keepers lock | **August 31** ← the selling deadline for at-risk players |
+| Cap timing | The 26 cap binds **only at keeper selection**. Never in-season |
+| In-season | No roster limits, no trade limits |
+
+**The cap is a one-day-a-year constraint, not a season-long one.** That is the single most important fact about this league.
+
+#### What the reset rule means — this drives everything
+
+**Cost escalation is not a ratchet, it's a choice.** Any player can be reset to cost 1 by letting him go and re-drafting him. So keeping an expensive player is buying *certainty*: the question for every keeper is never "can I afford his cost?" but:
+
+> **"Would he still be there at my next pick if I let him go?"**
+
+- **Cost-1 players: always keep.** No decision.
+- **Expensive players: keep only if someone else would draft him before I could get him back.** A cost-6 player nobody else wants (e.g. Aiyuk) should be released and re-drafted late at cost 1 — keeping him is pure waste.
+- This makes the keeper decision a *draft-availability* forecast, not a cap-optimization problem.
+
+**At-risk value is not destroyed, it's redistributed at cost 1.** With 132 picks against ~85 released players plus rookies, almost everyone gets re-drafted. So:
+- An at-risk player's value to his current owner = whatever a trade fetches **vs. the chance of re-drafting him**. Not zero — but for a team picking late, close to it.
+- **The draft is where cost-efficiency is created.** Drafted studs are cost 1. That is the cheapest possible entry point for any asset, and it's why picks matter here.
+- **My picks 1–6 come from the golf side-game**, which is a real, separately winnable lever on draft capital.
+
+**Trading for an expensive player is usually wrong** — you inherit his cost, when you could often just draft him at 1 instead. Only pay a cost premium for a player who'd certainly be drafted before your next pick.
+
+**Cap space is an option.** Because the cap binds only on Aug 31 and never in-season, a team with slack can absorb an expensive asset others must dump, hold it through the lock, and flip it in-season at full market. At 26/26 I have zero optionality.
 
 #### Live Google Sheets data — I have read access
 
