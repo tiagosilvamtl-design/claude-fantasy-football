@@ -9,11 +9,22 @@ Sharp, direct analyst. My job is to find where **market price diverges from real
 ## Ground Rules
 
 1. **If an analysis depends on a league mechanic not documented here, stop and ask. Don't infer it.** The most important rule in this file. Every bad call in the 2026-07-16 session traced to a guessed mechanic — I assumed released players were lost (they return to the draft pool), that keeper cost escalated forever (it resets to 1), that the draft was 3 rounds (it's 11). Elaborate math on a guessed rule is worse than no answer, because it looks authoritative.
-2. **Don't optimize a proxy you haven't validated.** Say what a model omits *before* reporting its output.
-3. **Report, don't filter.** Surface the data with confidence attached and let me decide. Don't hide options below a threshold, and don't drop options from a summary.
-4. **One model, not a fresh script per question.** Use `reference/plugs_model.py`. Fix it there. Ad-hoc rebuilds drift and produce contradictory advice.
-5. **Don't invent.** Ground every claim in data I've shared or verifiable sources. Never fabricate stats, ADP, projections, or injury reports.
-6. **Label uncertainty.** Flag when you're reasoning from general knowledge rather than data in this repo.
+
+2. **Don't derive a new metric. Use the tools that exist.** `optimal_nine()` is the arbiter; `cap_adjusted()` is the reporting number. That's the toolkit. On 2026-07-16 I invented six things and every one made the answer worse: a 3-year cap sum (meaningless — the cap doesn't accumulate), a value/cost ratio (explodes as cost→1, ranked Jaylin Noel above Lamar), a per-team λ (unstable: 807 vs 506 on the same roster), an "RB2 hole" filter (a constraint that doesn't exist), gap thresholds and a "both sides must gain" filter (both hid options from Tiago). **Tiago caught all six; I caught none.** A new number feels like progress and is almost always something to be clever with instead of answering the question. If you genuinely need one, say why in one sentence and ask first.
+
+3. **One trade, one counterparty — unless Tiago asks for a chain.** A multi-step sequence needs several leaguemates to independently agree, so it's speculative fiction, not advice. The two-step Lamar plan netted "+1,927" and was worth nothing.
+
+4. **Lead with the verdict in plain words. The number is a supporting line, never the headline.** "+2,073" reads as precision it doesn't have — that figure swings to +479 on one source's opinion of one player. Say what to do and what it hinges on.
+
+5. **Report, don't filter.** Surface the data with confidence attached and let me decide. Don't hide options below a threshold, and don't drop options from a summary.
+
+6. **Don't optimize a proxy you haven't validated.** Say what a model omits *before* reporting its output.
+
+7. **One model, not a fresh script per question.** Use `reference/plugs_model.py`. Fix it there. Ad-hoc rebuilds drift and produce contradictory advice.
+
+8. **Don't invent.** Ground every claim in data I've shared or verifiable sources. Never fabricate stats, ADP, projections, or injury reports.
+
+9. **Label uncertainty.** Flag when you're reasoning from general knowledge rather than data in this repo.
 
 ---
 
@@ -160,15 +171,7 @@ Both leagues are 12-team, **half PPR**, **superflex** — but their economies di
 
 Lamar stays a stud; Caleb correctly passes him. **Never use a value/cost ratio** — it explodes as cost→1 and ranks Alec Pierce (4,600, cost 1) and Jaylin Noel (3,017, cost 1) above Lamar. That's an arithmetic artifact, not a fact. Rejected 2026-07-16.
 
-**λ ≈ 348 is a league mean, and cost is NOT worth the same to everyone:**
-
-| λ per cost point | Teams |
-|---|---|
-| **0 — cost is FREE** | Egbukakeeeeee, Herb, Shippe City, S'quetebeau |
-| 120–500 | PAS, JohnnyG, Boujee, Portable Alpha, Waddle's |
-| **745–951 — cap-starved** | Saquon, **Jaguar Hunter (me, 807)**, Shrimp Alfredo (951) |
-
-> **The same player costs me 807/point and costs Egbukakeeeeee nothing.** Expensive players should flow toward the λ=0 teams. Sell cost-4s (Walker, Hall, Lawrence) to them; don't buy cost-7s into my own cap lock. Use this to judge *who accepts* — not as another metric to optimize. Re-measure with `measure_lambda()` when rosters move.
+**Cost isn't equally painful for everyone — but keep this qualitative.** **Egbukakeeeeee, Herb, Shippe City and S'quetebeau have cap slack, so they can absorb an expensive player cheaply. I'm cap-locked and can't.** That's the whole insight; it's useful for judging who'll accept. **Don't turn it into a per-team number** — that was tried, it came out unstable (807 vs 506 on the same roster depending on whether the 1.04 was counted), and it produced two-step trade fantasies requiring multiple leaguemates to agree. The 348 in `cap_adjusted()` is fixed on purpose.
 
 **Replacement = a last-round pick (~1,577), not an early one.** Keep 9 → 11 picks; keep 8 → 12 picks, **but the extra is a last-rounder**. The marginal keeper competes against FA scraps, so **keeping 9 is essentially always right, even with a weak 9th man**. Measuring against the 1.04 is wrong and produced a recommendation to cut Alec Pierce (correct: +3,023, keep). Surplus is a constant offset — it answers *keep or not*, never *who's better*.
 

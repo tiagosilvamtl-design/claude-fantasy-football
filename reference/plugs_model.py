@@ -154,20 +154,12 @@ def optimal_nine(roster, key="ktc"):
     return best[1][0], best[0][1], set(best[1][1])
 
 
-# Shadow price of one cost point: what an extra unit of the 26 cap buys.
-# Measured 2026-07-16 across all 12 rosters as (opt9@26 - opt9@22)/4.
-# League mean ~348. It is NOT uniform — see LAMBDA_BY_TEAM. Re-measure with
-# measure_lambda() when rosters move.
+# Cost penalty per point of the 26 cap. Fixed. Measured once as the league
+# mean, 2026-07-16. DO NOT make this per-team or re-derive it live: that was
+# tried, it came out unstable (807 vs 506 on the same roster depending on
+# whether the 1.04 was included) and it produced multi-step trade fantasies.
+# A fixed, boring number is the point.
 LAMBDA = 348
-
-# Cost is worth wildly different amounts depending on whether a team is
-# cap-bound. Teams at 0 have slack: cost is FREE to them.
-#   Shrimp Alfredo 951 | Jaguar Hunter 807 | Saquon 745 | Waddle's ~494
-#   Portable Alpha 454 | JohnnyG 283 | Boujee 324 | PAS 120
-#   Egbukakeeeeee 0 | Herb 0 | Shippe City 0 | S'quetebeau 0
-# => expensive players are near-free to the lambda-0 teams and costly to me.
-#    Sell cost-4s toward them; don't buy cost-7s into my own cap lock.
-#    Use this as an INSIGHT for who'll accept — not as another metric.
 
 
 def cap_adjusted(player, lam=LAMBDA):
@@ -190,28 +182,6 @@ def cap_adjusted(player, lam=LAMBDA):
     optimal_nine(), which already handles cost exactly, as a constraint.
     """
     return round(player["value"] - lam * player["cost"])
-
-
-def measure_lambda(roster, lo=22, hi=26):
-    """Empirical shadow price for one roster: value gained per cost point."""
-    def at(cap):
-        dp = {(0, 0): 0}
-        for _, p in roster.items():
-            nd = dict(dp)
-            for (n, c), v in dp.items():
-                if n >= SLOTS:
-                    continue
-                nc = c + p["cost"]
-                if nc > cap:
-                    continue
-                k = (n + 1, nc)
-                if k not in nd or nd[k] < v + p["value"]:
-                    nd[k] = v + p["value"]
-            dp = nd
-        nine = [v for k, v in dp.items() if k[0] == SLOTS]
-        return max(nine) if nine else 0
-    a, b = at(lo), at(hi)
-    return (b - a) / (hi - lo) if b else 0
 
 
 def surplus(player, replacement=1577):
