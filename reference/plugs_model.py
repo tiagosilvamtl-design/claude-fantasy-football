@@ -154,6 +154,82 @@ def optimal_nine(roster, key="ktc"):
     return best[1][0], best[0][1], set(best[1][1])
 
 
+# Shadow price of one cost point: what an extra unit of the 26 cap buys.
+# Measured 2026-07-16 across all 12 rosters as (opt9@26 - opt9@22)/4.
+# League mean ~348. It is NOT uniform — see LAMBDA_BY_TEAM. Re-measure with
+# measure_lambda() when rosters move.
+LAMBDA = 348
+
+# Cost is worth wildly different amounts depending on whether a team is
+# cap-bound. Teams at 0 have slack: cost is FREE to them.
+#   Shrimp Alfredo 951 | Jaguar Hunter 807 | Saquon 745 | Waddle's ~494
+#   Portable Alpha 454 | JohnnyG 283 | Boujee 324 | PAS 120
+#   Egbukakeeeeee 0 | Herb 0 | Shippe City 0 | S'quetebeau 0
+# => expensive players are near-free to the lambda-0 teams and costly to me.
+#    Sell cost-4s toward them; don't buy cost-7s into my own cap lock.
+#    Use this as an INSIGHT for who'll accept — not as another metric.
+
+
+def cap_adjusted(player, lam=LAMBDA):
+    """Value translated into this league's reality: value - lambda * cost.
+
+    All four sources (KTC/ETR/DN/FP) price a world with NO cost system, so raw
+    value overstates expensive players here. This is a LINEAR penalty — a small
+    gradual discount, which is what the cap actually imposes.
+
+    DO NOT use a value/cost ratio. It explodes as cost -> 1 and ranks Alec
+    Pierce (4600, cost 1) and Jaylin Noel (3017, cost 1) above Lamar Jackson
+    (8587, cost 7). That is an artifact of the arithmetic, not a fact about
+    the players. Rejected 2026-07-16.
+
+        Lamar  8587 cost 7 -> 6150   (still a stud, correctly)
+        Caleb  8242 cost 2 -> 7546   (passes Lamar, correctly)
+        Jeanty 7534 cost 1 -> 7186
+
+    This is for REPORTING. The arbiter for roster construction is
+    optimal_nine(), which already handles cost exactly, as a constraint.
+    """
+    return round(player["value"] - lam * player["cost"])
+
+
+def measure_lambda(roster, lo=22, hi=26):
+    """Empirical shadow price for one roster: value gained per cost point."""
+    def at(cap):
+        dp = {(0, 0): 0}
+        for _, p in roster.items():
+            nd = dict(dp)
+            for (n, c), v in dp.items():
+                if n >= SLOTS:
+                    continue
+                nc = c + p["cost"]
+                if nc > cap:
+                    continue
+                k = (n + 1, nc)
+                if k not in nd or nd[k] < v + p["value"]:
+                    nd[k] = v + p["value"]
+            dp = nd
+        nine = [v for k, v in dp.items() if k[0] == SLOTS]
+        return max(nine) if nine else 0
+    a, b = at(lo), at(hi)
+    return (b - a) / (hi - lo) if b else 0
+
+
+def surplus(player, replacement=1577):
+    """Value over a LAST-ROUND pick. Answers KEEP-OR-NOT, never WHO'S-BETTER.
+
+    Keep 9 -> 11 picks. Keep 8 -> 12 picks, but THE EXTRA IS A LAST-ROUNDER
+    (Tiago, 2026-07-16) — so the marginal keeper competes against FA scraps,
+    not against my 1.04. Keeping 9 is therefore essentially always right, even
+    with a weak 9th man.
+
+    Measuring against an early pick is WRONG and made me recommend cutting
+    Alec Pierce (correct: +3023, keep).
+
+    A fixed baseline is a constant offset — it cannot reorder players.
+    """
+    return player["value"] - replacement
+
+
 def roster_shape(roster, selection=None):
     """Positional composition — REPORT THIS, never filter on it.
 

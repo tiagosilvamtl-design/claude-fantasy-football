@@ -143,6 +143,37 @@ Both leagues are 12-team, **half PPR**, **superflex** — but their economies di
 
 **Cap space is an option.** Since the cap binds only Aug 31 and never in-season, a team with slack can absorb an expensive asset others must dump, hold it through the lock, and flip it in-season at full market. At 26/26 I have zero optionality.
 
+#### Cost: the sources don't know it exists
+
+**KTC, ETR, Dynasty Nerds and FantasyPros all price a world with no keeper cost.** Their numbers are *costless* value. This league overlays a cost system they can't see, so **never report raw value as if it were league value**.
+
+**Cost is already handled exactly, as a constraint inside `optimal_nine()`** (maximize value subject to Σcost ≤ 26). That's the arbiter. The fix needed was in *reporting*, not the math.
+
+**Report `cap_adjusted()` alongside value: `value − 348 × cost`.** A small, gradual, linear discount — which is what the cap actually imposes:
+
+| | Value | Cost | Adjusted |
+|---|---|---|---|
+| Caleb | 8,242 | 2 | **7,546** |
+| Jeanty | 7,534 | 1 | **7,186** |
+| **Lamar** | 8,587 | **7** | **6,150** |
+| McBride | 6,918 | 3 | 5,874 |
+
+Lamar stays a stud; Caleb correctly passes him. **Never use a value/cost ratio** — it explodes as cost→1 and ranks Alec Pierce (4,600, cost 1) and Jaylin Noel (3,017, cost 1) above Lamar. That's an arithmetic artifact, not a fact. Rejected 2026-07-16.
+
+**λ ≈ 348 is a league mean, and cost is NOT worth the same to everyone:**
+
+| λ per cost point | Teams |
+|---|---|
+| **0 — cost is FREE** | Egbukakeeeeee, Herb, Shippe City, S'quetebeau |
+| 120–500 | PAS, JohnnyG, Boujee, Portable Alpha, Waddle's |
+| **745–951 — cap-starved** | Saquon, **Jaguar Hunter (me, 807)**, Shrimp Alfredo (951) |
+
+> **The same player costs me 807/point and costs Egbukakeeeeee nothing.** Expensive players should flow toward the λ=0 teams. Sell cost-4s (Walker, Hall, Lawrence) to them; don't buy cost-7s into my own cap lock. Use this to judge *who accepts* — not as another metric to optimize. Re-measure with `measure_lambda()` when rosters move.
+
+**Replacement = a last-round pick (~1,577), not an early one.** Keep 9 → 11 picks; keep 8 → 12 picks, **but the extra is a last-rounder**. The marginal keeper competes against FA scraps, so **keeping 9 is essentially always right, even with a weak 9th man**. Measuring against the 1.04 is wrong and produced a recommendation to cut Alec Pierce (correct: +3,023, keep). Surplus is a constant offset — it answers *keep or not*, never *who's better*.
+
+**What cost accounting still can't see:** escalation. The knapsack is a one-year snapshot. Lamar at 7 → 8 → 9 can never be safely released (a top-5 pool player is drafted instantly), so the reset rule doesn't save him — unlike Aiyuk. Flag the trajectory; **never sum it into a fake multi-year metric** (the cap doesn't accumulate — it's 26, once a year).
+
 #### The keeper-9 is NOT a lineup
 
 **Roster = 20. Keepers = 9. The other 11 come from the 11-round draft.** The starting lineup (QB/RB/RB/WR/WR/TE/FLEX/FLEX/SF/DEF) is drawn from all 20 — not from the 9.
