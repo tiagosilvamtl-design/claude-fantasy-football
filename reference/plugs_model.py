@@ -12,19 +12,31 @@ encoded here, ASK — don't infer it and don't rebuild this ad hoc.
     The 26 cap binds ONLY at keeper selection. Never in-season.
     No in-season roster or trade limits.
 
+PRICE vs VALUE — the core method. Do not collapse these into one number.
+    PRICE = KTC. Crowdsourced market perception. Its ONLY job is predicting
+            whether they'll accept a trade. It is not truth.
+    VALUE = ETR + Dynasty Nerds + FantasyPros. Three experts.
+    EDGE  = value - price. Buy the gap, sell into the price.
+
+    NEVER maximize KTC — that optimizes the market's opinion and cannot beat
+    it. Maximize analyst VALUE subject to KTC parity.
+    My keeper-9  -> optimize on analyst value (who's actually best).
+    Their bar / will-they-accept -> model on KTC (what they perceive).
+
 WHAT THIS MODEL DOES NOT KNOW (state these when reporting output):
-  - Lineup slots. It maximizes KTC, not starting-lineup points. A nine of
-    nine WRs would score great here and be unstartable.
-  - Positional scarcity/need for the OTHER team. KTC can't see that a team
-    with one RB desperately needs a second.
+  - Lineup slots. It maximizes a value number, not starting-lineup points.
+    Nine WRs would score great here and be unstartable.
+  - Positional scarcity/need for the OTHER team. No number here sees that a
+    team with one RB desperately needs a second.
   - Draft availability. The reset rule makes every keeper decision a
-    forecast of "would he last until my next pick?" -- which is a human
-    read, not a number this file has.
-  - In-season value. The cap is off after Aug 31, so expensive assets are
-    worth full market then.
+    forecast of "would he last until my next pick?" -- a human read.
+  - In-season value. The cap is off after Aug 31.
+  - Whether ETR/DN/FP are any good. Three experts agreeing may mean shared
+    inputs, not correctness.
 
 Usage:
     from plugs_model import load_league, optimal_nine, at_risk, keeper_bar
+    from plugs_model import value_table          # price vs value, all sources
 """
 import json, pickle, re, subprocess, sys
 from pathlib import Path
@@ -49,17 +61,71 @@ def ktc():
     return {norm(x["name"]): x for x in d["players"]}, d
 
 
-def optimal_nine(roster):
-    """Best <=9 players maximizing KTC subject to total cost <= 26.
+def value_table(fp_ranks=None):
+    """Merge all four sources onto one honest scale.
 
-    roster: {name: {"cost": int, "ktc": int, ...}}
-    returns (value, cost, set_of_names)
+    Returns {normalized_name: {name, pos, age, price, etr, dn, fp, value,
+                               gap, spread}}
+      price  = KTC value (market perception)
+      etr/dn/fp = each expert's rank converted to an IMPLIED market value via
+                  KTC's own rank->value curve ("if the market priced him where
+                  this expert ranks him, what's he worth?"). Ranks are linear
+                  and value is not (JJ p13) — never average raw ranks.
+      value  = mean of the three experts' implied values
+      gap    = value - price. Positive => experts above market => BUY.
+      spread = max-min across experts. THE CONFIDENCE SIGNAL. Low spread +
+               big gap = strong. High spread = experts disagree => be neutral.
 
-    NOTE: this is the right model for cap feasibility and the WRONG model
-    for lineup construction — it has no concept of starting slots.
+    fp_ranks: {normalized_name: rank} from the shared Plug Golf Tracker
+              'FP Rankings' tab (top 150 only). Optional; omitted -> 2 experts.
+    """
+    import bisect, csv as _csv
+    K, _ = ktc()
+    curve = sorted([(p["rank_sf"], p["ktc_sf"]) for p in K.values() if p["rank_sf"]])
+    ranks = [c[0] for c in curve]
+    vals = [c[1] for c in curve]
+
+    def implied(rank):
+        return vals[min(bisect.bisect_left(ranks, rank), len(vals) - 1)]
+
+    dn, dnr = {}, {}
+    for r in _csv.DictReader(open(HERE.parent / "dynasty_rankings_sflex.csv")):
+        if r["Value"].strip().isdigit():
+            dnr[norm(r["Player"])] = int(r["Rank"])
+    rows = list(_csv.DictReader(open(HERE.parent / "Dynasty Rankings.csv")))
+    pk = list(rows[0].keys())[0]
+    etr = {norm(r[pk]): int(r["SF/TE Prem"]) for r in rows if r["SF/TE Prem"].isdigit()}
+
+    out = {}
+    for n, p in K.items():
+        srcs = {}
+        if n in etr: srcs["etr"] = implied(etr[n])
+        if n in dnr: srcs["dn"] = implied(dnr[n])
+        if fp_ranks and n in fp_ranks: srcs["fp"] = implied(fp_ranks[n])
+        if not srcs: continue
+        iv = list(srcs.values())
+        val = sum(iv) / len(iv)
+        out[n] = {"name": p["name"], "pos": p["pos"], "age": p["age"],
+                  "price": p["ktc_sf"], "value": round(val),
+                  "gap": round(val - p["ktc_sf"]), "spread": max(iv) - min(iv),
+                  "n_sources": len(iv), **srcs}
+    return out
+
+
+def optimal_nine(roster, key="ktc"):
+    """Best <=9 players maximizing `key` subject to total cost <= 26.
+
+    roster: {name: {"cost": int, "ktc": int, "value": int, ...}}
+    key:    "value" for MY keeper decisions (who's actually best).
+            "ktc"   for modelling THEIR behaviour (what they perceive).
+    returns (total, cost, set_of_names)
+
+    NOTE: right model for cap feasibility, WRONG model for lineup
+    construction — it has no concept of starting slots.
     """
     dp = {(0, 0): (0, ())}
     for name, p in roster.items():
+        w = p.get(key, p["ktc"])
         nd = dict(dp)
         for (n, c), (v, sel) in dp.items():
             if n >= SLOTS:
@@ -68,8 +134,8 @@ def optimal_nine(roster):
             if nc > CAP:
                 continue
             k = (n + 1, nc)
-            if k not in nd or nd[k][0] < v + p["ktc"]:
-                nd[k] = (v + p["ktc"], sel + (name,))
+            if k not in nd or nd[k][0] < v + w:
+                nd[k] = (v + w, sel + (name,))
         dp = nd
     nine = [(k, v) for k, v in dp.items() if k[0] == SLOTS]
     best = max(nine, key=lambda x: x[1][0]) if nine else max(dp.items(), key=lambda x: x[1][0])

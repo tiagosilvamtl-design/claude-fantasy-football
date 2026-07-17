@@ -334,11 +334,52 @@ Remember social proof: a room converging on a take is not evidence the take is r
 
 ---
 
-## Valuing Trades: KTC Is the Currency
+## The Core Method: Price vs. Value
 
-**KTC is the default valuation tool for all trade analysis in both leagues.** It's a dynasty trade-value market, which is what my leagues actually are. Rankings (FantasyPros, ETR) are *opinions* — useful as a second read and for spotting where the market disagrees with itself. KTC is *price*.
+**This is the whole edge. Read this before any trade or keeper analysis.**
 
-Don't value trades in ETR auction dollars. Those are a redraft-auction currency and they mis-rank dynasty assets.
+JJ's central claim is that edges come from where **market expectation and player probability diverge** (p29). Market Score is his instrument for that in redraft. In dynasty, the instrument is a price axis and a value axis:
+
+| Axis | Source | Its one job |
+|---|---|---|
+| **PRICE** | **KTC** — crowdsourced, live | **Will they accept this trade?** KTC is what my leaguemates check before hitting accept. It is *market perception*, not truth. |
+| **VALUE** | **ETR + Dynasty Nerds + FantasyPros** | What the player is actually worth. Three experts I trust. |
+
+> **The edge is the gap. Buy where experts sit above market price; sell where the market pays above expert value.**
+
+### Never optimize KTC
+
+Maximizing `Σ KTC(my keeper-9)` optimizes the market's own opinion and **by construction cannot beat the market**. That was the central error of the 2026-07-16 session. Correct objective:
+
+> **Maximize analyst value, subject to KTC parity.**
+
+A KTC-even trade where I take the analyst-favored side is free money: they accept because the price looks fair, I win because the price is wrong.
+
+### Two models, two currencies
+
+- **My keeper-9 / who to keep** → optimize on **analyst value**. I want who's actually best.
+- **Their keeper-9, their bar, will-they-accept** → model on **KTC**. That's what *they* perceive.
+
+Conflating these produces confident nonsense.
+
+### Comparing sources: implied value, never ranks
+
+Rankings are linear; value is not (JJ p13). A 130-rank gap at rank 300 is noise; a 5-rank gap at rank 10 is enormous. FP and ETR publish **ranks**, not values.
+
+**Method:** build KTC's own rank→value curve, then convert each source's rank into an *implied market value* — "if the market priced him where this expert ranks him, what would he be worth?" That puts all four sources on one honest scale. Implemented in `reference/plugs_model.py: value_table()`.
+
+### Report, don't filter
+
+**No thresholds. Surface the gap and let Tiago decide.** Filtering on an arbitrary cutoff hides information he needs — and dropping options from a summary is the same failure. Always report:
+
+- **price** (KTC), **each expert separately**, the **gap**, and the **spread**.
+- **Spread = the three experts disagreeing with each other.** It's the confidence signal. Low spread + big gap = strong. Big spread = the experts are fighting, and JJ's rule applies: **when sources disagree without a clear reason, the honest stance is neutral** — say so rather than picking the one that supports a conclusion.
+
+### Live caveats
+
+- **KTC is live; the ETR and Dynasty Nerds CSVs are static snapshots.** Part of any gap may be staleness rather than insight. Check dates before acting.
+- Three experts agreeing may mean shared inputs, not correctness. I don't know these sources' track records.
+- FP from the shared sheet is **top-150 only**.
 
 ### Fetching
 
