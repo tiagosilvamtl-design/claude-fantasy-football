@@ -66,9 +66,18 @@ Rankings are linear; value is not (guide p13). A 130-rank gap at rank 300 is noi
 
 **Spread = the experts disagreeing with each other. It is the confidence signal.** Low spread + big gap = strong. High spread = the experts are fighting, and JJ's rule applies: **when sources disagree without a clear reason, the honest stance is neutral** — say so rather than picking the source that supports a conclusion.
 
+### Market Score is a separate axis — the 2026-quality overlay
+
+**KTC and the three experts are all dynasty value/price. Market Score is redraft** — a 0–100 within-position bet on 2026 season production. **Never fold it into the value consensus** (that mixes redraft and dynasty). It's a second, orthogonal question, and in a keeper league the edge is the **overlap**:
+
+> **Underpriced on the gap (cheap to acquire) AND high Market Score (good this year) = the keeper-league buy.**
+
+Compare within position only (a QB 100 ≠ a WR 100). Coverage: RB/WR top-120, QB/TE top-180 — deep guys have no score (`None`). It's in `value_table()` as `market_score`. **The tiers file is 1QB redraft** — for the redraft leagues when they form, not for Plugs/dynasty, where superflex reshapes everything. We read this data for the value overlay, not for its raw rankings.
+
 ### Buy signals
 
 - **Experts above KTC price** — the core signal. Report the spread with it
+- **High Market Score + positive gap** — cheap *and* good in 2026, the keeper sweet spot
 - **An at-risk player on another roster** *(Plugs)* — **but only if he's EXPENSIVE and therefore stranded** (McCaffrey cost 9, DJ Moore cost 8). Cheap at-risk players get traded, not gifted — they're auctions I usually lose. See "At-risk value" below
 - **Cheap keeper cost relative to value** *(Plugs)* — cost-1 and cost-2 studs are the most efficient assets in the league
 - Youth the market hasn't repriced; age curve says 2–3 peak years left but perception has declined
@@ -267,9 +276,11 @@ Guide rankings baseline: half PPR, 12-team, 1QB/2RB/3WR/1TE/1FLEX; auction value
 | Source | Role | Where |
 |---|---|---|
 | **KTC** | **PRICE** — market perception, acceptance | `reference/fetch-ktc.py` → `ktc-values.json` |
-| **ETR** | VALUE — expert | `Dynasty Rankings.csv` (`SF/TE Prem` col) |
-| **Dynasty Nerds** | VALUE — expert | `dynasty_rankings_sflex.csv` |
-| **FantasyPros** | VALUE — expert | `FP Rankings` tab in the shared sheet (top 150) |
+| **ETR** | VALUE — expert (dynasty) | `Dynasty Rankings.csv` (`SF/TE Prem` col) |
+| **Dynasty Nerds** | VALUE — expert (dynasty) | `dynasty_rankings_sflex.csv` |
+| **FantasyPros** | VALUE — expert (dynasty) | `FP Rankings` tab in the shared sheet (top 150) |
+| **Market Score** | **2026-QUALITY overlay** — JJ's 0–100 redraft bet (separate axis) | `market-score-2026.csv` |
+| **JJ tiers** | Redraft/1QB rankings + tier breaks | `tiers-2026.csv` |
 | **Late-Round Guide** | Process/mindset layer | PDF + `reference/late-round-2026-*` |
 | **Sleeper API** | Authoritative live settings/rosters | `api.sleeper.app/v1/league/<id>` |
 | **`../plug-golf`** | Keeper costs, roster costs, trade radar, golf game | that repo's README |

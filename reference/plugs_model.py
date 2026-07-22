@@ -72,20 +72,56 @@ def ktc():
     return {norm(x["name"]): x for x in d["players"]}, d
 
 
+def market_scores():
+    """JJ's Market Score, {normalized_name: (pos, score)}, from market-score-2026.csv.
+
+    REDRAFT / 1QB signal — a 0-100 within-position bet on 2026 season value from
+    ADP + predictive inputs. NOT dynasty value. It is a SEPARATE axis: it tells
+    you "good this year", KTC/experts tell you "cheap". Never fold it into the
+    value consensus (that would mix redraft and dynasty). Compare within position
+    only; coverage is RB/WR top-120, QB/TE top-180.
+
+    The CSV mirrors the guide's page-272 layout: four position blocks laid side by
+    side (QB|RB|WR|TE) with a two-row header. We detect the blocks from the header
+    rather than hardcode columns, so it survives reordering. It updates weekly.
+    """
+    import csv as _csv
+    POS = {"QUARTERBACK": "QB", "RUNNING BACK": "RB", "WIDE RECEIVER": "WR", "TIGHT END": "TE"}
+    rows = list(_csv.reader(open(HERE.parent / "market-score-2026.csv")))
+    blocks = {i: POS[c.strip().upper()] for i, c in enumerate(rows[0]) if c.strip().upper() in POS}
+    out = {}
+    for c0, pos in blocks.items():
+        sub = [rows[1][c] if c < len(rows[1]) else "" for c in range(c0, c0 + 5)]
+        pcol = c0 + sub.index("Player")
+        scol = c0 + [x.strip().lower() for x in sub].index("market score")
+        for r in rows[2:]:
+            if pcol < len(r) and r[pcol].strip() and scol < len(r) and r[scol].strip():
+                try:
+                    out[norm(r[pcol])] = (pos, float(r[scol]))
+                except ValueError:
+                    pass
+    if len(out) < 130:   # loud failure: the export shape changed, don't fail silently
+        sys.exit(f"market_scores() parsed only {len(out)} players — check the CSV layout")
+    return out
+
+
 def value_table(fp_ranks=None):
-    """Merge all four sources onto one honest scale.
+    """Merge all sources onto one honest scale.
 
     Returns {normalized_name: {name, pos, age, price, etr, dn, fp, value,
-                               gap, spread}}
+                               gap, spread, market_score}}
       price  = KTC value (market perception)
       etr/dn/fp = each expert's rank converted to an IMPLIED market value via
                   KTC's own rank->value curve ("if the market priced him where
                   this expert ranks him, what's he worth?"). Ranks are linear
                   and value is not (JJ p13) — never average raw ranks.
-      value  = mean of the three experts' implied values
+      value  = mean of the three experts' implied values  [DYNASTY]
       gap    = value - price. Positive => experts above market => BUY.
       spread = max-min across experts. THE CONFIDENCE SIGNAL. Low spread +
                big gap = strong. High spread = experts disagree => be neutral.
+      market_score = JJ's 0-100 REDRAFT bet on 2026 (separate axis, may be None).
+                  The keeper-league edge is the OVERLAP: underpriced on gap
+                  (cheap) AND high market_score (good this year).
 
     fp_ranks: {normalized_name: rank} from the shared Plug Golf Tracker
               'FP Rankings' tab (top 150 only). Optional; omitted -> 2 experts.
@@ -107,6 +143,8 @@ def value_table(fp_ranks=None):
     pk = list(rows[0].keys())[0]
     etr = {norm(r[pk]): int(r["SF/TE Prem"]) for r in rows if r["SF/TE Prem"].isdigit()}
 
+    ms = market_scores()
+
     out = {}
     for n, p in K.items():
         srcs = {}
@@ -119,7 +157,8 @@ def value_table(fp_ranks=None):
         out[n] = {"name": p["name"], "pos": p["pos"], "age": p["age"],
                   "price": p["ktc_sf"], "value": round(val),
                   "gap": round(val - p["ktc_sf"]), "spread": max(iv) - min(iv),
-                  "n_sources": len(iv), **srcs}
+                  "n_sources": len(iv),
+                  "market_score": ms[n][1] if n in ms else None, **srcs}
     return out
 
 
