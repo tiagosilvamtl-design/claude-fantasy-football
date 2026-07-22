@@ -7,3 +7,6 @@ reference/late-round-*-text.md
 # KTC values are a live market snapshot — regenerate with reference/fetch-ktc.py
 # rather than committing a copy that's stale within hours.
 reference/ktc-values.json
+
+# macOS noise
+.DS_Store
