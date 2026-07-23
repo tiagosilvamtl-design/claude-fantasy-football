@@ -337,7 +337,7 @@ gc = gspread.authorize(Credentials.from_service_account_file(
 
 **Layout:** `Roster Costs` and `Trade Radar` lay teams side-by-side in 4-column blocks (`Player | Pos-or-FP-Rank | Cost | spacer`), team name in row 0. Stride `range(0, len(row0), 4)`.
 
-**Freshness:** the GitHub Action still runs against the **2025** league ID, so these tabs are built from 2025 rosters. Harmless while 2026 is `pre_draft` with identical rosters — **re-verify against the Sleeper API before trusting the sheet for a 2026 decision.**
+**Freshness:** the GitHub Action now runs against the **2026** league (`../plug-golf` `tracker.py` reads `LEAGUE_ID` from env, defaulting to `1367160708269117440`; fixed 2026-07-22). So the tabs reflect 2026 rosters after each Action run. Still worth a Sleeper API spot-check before a high-stakes call, since the sheet only refreshes when the Action runs — but the systematic 2025 staleness is gone.
 
 ---
 
