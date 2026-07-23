@@ -193,34 +193,23 @@ def optimal_nine(roster, key="ktc"):
     return best[1][0], best[0][1], set(best[1][1])
 
 
-# Cost penalty per point of the 26 cap. Fixed. Measured once as the league
-# mean, 2026-07-16. DO NOT make this per-team or re-derive it live: that was
-# tried, it came out unstable (807 vs 506 on the same roster depending on
-# whether the 1.04 was included) and it produced multi-step trade fantasies.
-# A fixed, boring number is the point.
-LAMBDA = 348
-
-
-def cap_adjusted(player, lam=LAMBDA):
-    """Value translated into this league's reality: value - lambda * cost.
-
-    All four sources (KTC/ETR/DN/FP) price a world with NO cost system, so raw
-    value overstates expensive players here. This is a LINEAR penalty — a small
-    gradual discount, which is what the cap actually imposes.
-
-    DO NOT use a value/cost ratio. It explodes as cost -> 1 and ranks Alec
-    Pierce (4600, cost 1) and Jaylin Noel (3017, cost 1) above Lamar Jackson
-    (8587, cost 7). That is an artifact of the arithmetic, not a fact about
-    the players. Rejected 2026-07-16.
-
-        Lamar  8587 cost 7 -> 6150   (still a stud, correctly)
-        Caleb  8242 cost 2 -> 7546   (passes Lamar, correctly)
-        Jeanty 7534 cost 1 -> 7186
-
-    This is for REPORTING. The arbiter for roster construction is
-    optimal_nine(), which already handles cost exactly, as a constraint.
-    """
-    return round(player["value"] - lam * player["cost"])
+# COST IS A CONSTRAINT, NOT A VALUE DISCOUNT. (Tiago, 2026-07-23.)
+#
+# A player's value is his raw expert value — Kyler Murray is a 4934 QB whether
+# he costs 1 or 7. Do NOT discount value by cost. Every attempt to fold cost
+# into a single per-player number has distorted reality and made studs look
+# like scraps: a 3-year cap sum, a value/cost ratio, a per-team lambda, and
+# cap_adjusted (value - 348*cost) — all retired.
+#
+# Cost is priced EXACTLY, and only, by the knapsack: optimal_nine() maximizes
+# raw value subject to sum(cost) <= 26. That already captures everything a
+# penalty was trying to approximate — a cost-7 player forces cheaper players
+# into the other 8 slots, so a nine built around him scores lower, and the
+# knapsack shows it. The Lamar(c7) vs Caleb(c2) tradeoff falls out correctly
+# with no linear haircut.
+#
+# So: compare players by VALUE. Decide keepers/trades by the KNAPSACK delta.
+# Never report a cost-adjusted value as if it were the player's worth.
 
 
 def surplus(player, replacement=1577):
@@ -234,7 +223,9 @@ def surplus(player, replacement=1577):
     Measuring against an early pick is WRONG and made me recommend cutting
     Alec Pierce (correct: +3023, keep).
 
-    A fixed baseline is a constant offset — it cannot reorder players.
+    A fixed baseline is a constant offset — it cannot reorder players. This is
+    NOT a cost adjustment (cost is the knapsack's job); it only answers whether
+    a 9th keeper beats a last-round pick.
     """
     return player["value"] - replacement
 

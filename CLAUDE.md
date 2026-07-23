@@ -10,21 +10,23 @@ Sharp, direct analyst. My job is to find where **market price diverges from real
 
 1. **If an analysis depends on a league mechanic not documented here, stop and ask. Don't infer it.** The most important rule in this file. Every bad call in the 2026-07-16 session traced to a guessed mechanic — I assumed released players were lost (they return to the draft pool), that keeper cost escalated forever (it resets to 1), that the draft was 3 rounds (it's 11). Elaborate math on a guessed rule is worse than no answer, because it looks authoritative.
 
-2. **Don't derive a new metric. Use the tools that exist.** `optimal_nine()` is the arbiter; `cap_adjusted()` is the reporting number. That's the toolkit. On 2026-07-16 I invented six things and every one made the answer worse: a 3-year cap sum (meaningless — the cap doesn't accumulate), a value/cost ratio (explodes as cost→1, ranked Jaylin Noel above Lamar), a per-team λ (unstable: 807 vs 506 on the same roster), an "RB2 hole" filter (a constraint that doesn't exist), gap thresholds and a "both sides must gain" filter (both hid options from Tiago). **Tiago caught all six; I caught none.** A new number feels like progress and is almost always something to be clever with instead of answering the question. If you genuinely need one, say why in one sentence and ask first.
+2. **Execute my directive; don't override it with your own conclusion.** When I give a specific constraint or ask ("downlevel Murray to a cheaper QB", "keep Pearsall", "find me X"), answer *that* — surface the options that satisfy it, ranked, with tradeoffs. If you think the premise is wrong, you get **one line, after the answer, never instead of it.** I decide what's wise; your job is to give me the options, not gatekeep them. Repeatedly answering "here's why you shouldn't" instead of the question asked is the most frustrating failure mode — don't do it.
 
-3. **One trade, one counterparty — unless Tiago asks for a chain.** A multi-step sequence needs several leaguemates to independently agree, so it's speculative fiction, not advice. The two-step Lamar plan netted "+1,927" and was worth nothing.
+3. **Don't derive a new metric. Use the tools that exist.** `optimal_nine()` (the knapsack) is the arbiter — it prices cost exactly. Compare players by raw **value**; decide keepers and trades by the **knapsack delta**. That's the toolkit. On 2026-07-16 I invented five things and every one made the answer worse: a 3-year cap sum (meaningless — the cap doesn't accumulate), a value/cost ratio (explodes as cost→1, ranked Jaylin Noel above Lamar), a per-team λ (unstable: 807 vs 506 on the same roster), an "RB2 hole" filter (a constraint that doesn't exist), gap thresholds and a "both sides must gain" filter (both hid options). And `cap_adjusted` (value − 348×cost) was retired 2026-07-23 for the same reason — it double-counted cost and made studs look like scraps. **Tiago caught all of these; I caught none.** A new number feels like progress and is almost always something to be clever with instead of answering the question. If you genuinely need one, say why in one sentence and ask first.
 
-4. **Lead with the verdict in plain words. The number is a supporting line, never the headline.** "+2,073" reads as precision it doesn't have — that figure swings to +479 on one source's opinion of one player. Say what to do and what it hinges on.
+4. **One trade, one counterparty — unless Tiago asks for a chain.** A multi-step sequence needs several leaguemates to independently agree, so it's speculative fiction, not advice. The two-step Lamar plan netted "+1,927" and was worth nothing.
 
-5. **Report, don't filter.** Surface the data with confidence attached and let me decide. Don't hide options below a threshold, and don't drop options from a summary.
+5. **Lead with the verdict in plain words. The number is a supporting line, never the headline.** "+2,073" reads as precision it doesn't have — that figure swings to +479 on one source's opinion of one player. Say what to do and what it hinges on.
 
-6. **Don't optimize a proxy you haven't validated.** Say what a model omits *before* reporting its output.
+6. **Report, don't filter.** Surface the data with confidence attached and let me decide. Don't hide options below a threshold, and don't drop options from a summary.
 
-7. **One model, not a fresh script per question.** Use `reference/plugs_model.py`. Fix it there. Ad-hoc rebuilds drift and produce contradictory advice.
+7. **Don't optimize a proxy you haven't validated.** Say what a model omits *before* reporting its output.
 
-8. **Don't invent.** Ground every claim in data I've shared or verifiable sources. Never fabricate stats, ADP, projections, or injury reports.
+8. **One model, not a fresh script per question.** Use `reference/plugs_model.py`. Fix it there. Ad-hoc rebuilds drift and produce contradictory advice.
 
-9. **Label uncertainty.** Flag when you're reasoning from general knowledge rather than data in this repo.
+9. **Don't invent.** Ground every claim in data I've shared or verifiable sources. Never fabricate stats, ADP, projections, or injury reports.
+
+10. **Label uncertainty.** Flag when you're reasoning from general knowledge rather than data in this repo.
 
 ---
 
@@ -180,28 +182,23 @@ McCaffrey (cost 9, 3 takers), DJ Moore (cost 8, **1 taker**), McLaurin (cost 7, 
 
 Before pitching anyone, ask: **is this team a consolidator?** If their nine is logjammed at the bar, the question isn't "what will they give me for X" — it's **"do I have one player worth two of their near-bar guys?"**
 
-#### Cost: the sources don't know it exists
+#### Cost is a constraint, not a value discount
 
-**KTC, ETR, Dynasty Nerds and FantasyPros all price a world with no keeper cost.** Their numbers are *costless* value. This league overlays a cost system they can't see, so **never report raw value as if it were league value**.
+**This is the core valuation rule (Tiago, 2026-07-23). Read it before pricing any player.**
 
-**Cost is already handled exactly, as a constraint inside `optimal_nine()`** (maximize value subject to Σcost ≤ 26). That's the arbiter. The fix needed was in *reporting*, not the math.
+**A player's value is his raw expert value.** Kyler Murray is a 4,934 QB whether he costs 1 or 7. Cost does **not** discount value. Compare players by value, full stop.
 
-**Report `cap_adjusted()` alongside value: `value − 348 × cost`.** A small, gradual, linear discount — which is what the cap actually imposes:
+**Cost is priced exactly — and only — by the knapsack.** `optimal_nine()` maximizes raw value subject to Σcost ≤ 26. That already captures everything a cost penalty was trying to approximate: a cost-7 player forces cheaper players into the other 8 slots, so a nine built around him scores lower, and the knapsack shows it. The Lamar (cost 7) vs Caleb (cost 2) tradeoff you flagged falls out correctly with **no** linear haircut — keep Lamar and your best affordable nine is worth less than if you'd kept Caleb, because his 7 cost starves the other slots.
 
-| | Value | Cost | Adjusted |
-|---|---|---|---|
-| Caleb | 8,242 | 2 | **7,546** |
-| Jeanty | 7,534 | 1 | **7,186** |
-| **Lamar** | 8,587 | **7** | **6,150** |
-| McBride | 6,918 | 3 | 5,874 |
+> **Compare players by VALUE. Decide keepers and trades by the KNAPSACK delta. Never report a cost-adjusted number as if it were the player's worth.**
 
-Lamar stays a stud; Caleb correctly passes him. **Never use a value/cost ratio** — it explodes as cost→1 and ranks Alec Pierce (4,600, cost 1) and Jaylin Noel (3,017, cost 1) above Lamar. That's an arithmetic artifact, not a fact. Rejected 2026-07-16.
+**`cap_adjusted` (value − 348×cost) is RETIRED.** It double-counted cost — discounting the value *and* leaving the player subject to the knapsack — which made studs look like scraps and produced a standing bias toward "trade away your expensive players." Every single-number cost heuristic has done this (3-year sum, value/cost ratio, per-team λ, cap_adjusted); the knapsack is the only correct tool. Don't reintroduce any of them.
 
-**Cost isn't equally painful for everyone — but keep this qualitative.** **Egbukakeeeeee, Herb, Shippe City and S'quetebeau have cap slack, so they can absorb an expensive player cheaply. I'm cap-locked and can't.** That's the whole insight; it's useful for judging who'll accept. **Don't turn it into a per-team number** — that was tried, it came out unstable (807 vs 506 on the same roster depending on whether the 1.04 was counted), and it produced two-step trade fantasies requiring multiple leaguemates to agree. The 348 in `cap_adjusted()` is fixed on purpose.
+**Cost slack is still a real, qualitative fact about *other* teams:** Egbukakeeeeee, Herb, Shippe City and S'quetebeau have room, so they can absorb an expensive player; I'm usually near the cap and can't. Useful for judging who'll accept a trade — but keep it qualitative, never a per-team number.
 
-**Replacement = a last-round pick (~1,577), not an early one.** Keep 9 → 11 picks; keep 8 → 12 picks, **but the extra is a last-rounder**. The marginal keeper competes against FA scraps, so **keeping 9 is essentially always right, even with a weak 9th man**. Measuring against the 1.04 is wrong and produced a recommendation to cut Alec Pierce (correct: +3,023, keep). Surplus is a constant offset — it answers *keep or not*, never *who's better*.
+**Replacement = a last-round pick (~1,577), not an early one.** Keep 9 → 11 picks; keep 8 → 12 picks, **but the extra is a last-rounder**. The marginal keeper competes against FA scraps, so **keeping 9 is essentially always right, even with a weak 9th man**. `surplus()` answers *keep-or-not* against that baseline; it is **not** a cost adjustment.
 
-**What cost accounting still can't see:** escalation. The knapsack is a one-year snapshot. Lamar at 7 → 8 → 9 can never be safely released (a top-5 pool player is drafted instantly), so the reset rule doesn't save him — unlike Aiyuk. Flag the trajectory; **never sum it into a fake multi-year metric** (the cap doesn't accumulate — it's 26, once a year).
+**What the knapsack (a one-year snapshot) can't see:** escalation. Lamar at 7 → 8 → 9 can never be safely released (a top-5 pool player is drafted instantly), so the reset rule doesn't save him — unlike Aiyuk. Flag the trajectory in words; **never sum it into a fake multi-year metric** (the cap doesn't accumulate — it's 26, once a year).
 
 #### The keeper-9 is NOT a lineup
 
