@@ -320,7 +320,7 @@ Service account key at `../plug-golf/credentials.json` (gitignored, local-only).
 
 | Spreadsheet | ID | Tabs |
 |---|---|---|
-| **Plug Golf Tracker** (shared with league) | `1Au0mnk2i76NZ1bF4v_V3YMeDtEUso0VEE7IXV12w8O4` | Leaderboard, FP Rankings, Rosters, Keepers, Roster Costs |
+| **The League of Plugs tracker** (shared with league) | `1Au0mnk2i76NZ1bF4v_V3YMeDtEUso0VEE7IXV12w8O4` | Standings, Bottom 6 Ranking, FP Rankings, Rosters, Keepers, Roster Costs |
 | **Trade strategy doc** (**private — league must not see**) | `1wgg8DWfA6mvYRcHHqq9G88T3najbtu1-6XinzCdqzwI` | Trade Radar |
 
 ```python
