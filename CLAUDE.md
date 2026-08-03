@@ -130,22 +130,39 @@ Both leagues are 12-team, **half PPR**, **superflex** — but their economies di
 | Scoring | Half PPR (0.5/rec), 4pt pass TD, 6pt rush/rec TD, −2 INT, −2 fumble, 0.04/pass yd, 0.1/rush+rec yd, **no TE premium** |
 | Playoffs | 6 teams · trade deadline week 11 |
 
-#### Keeper rules — verified with Tiago 2026-07-16. Don't infer beyond these; ask.
+#### Keeper rules — verified with Tiago 2026-07-16, mechanic reconciled to the sheet 2026-08-03. This table + the "exact mechanic" block below are the CANONICAL rules; don't infer beyond them, ask.
 
 | Rule | Value |
 |---|---|
 | Keepers | 9 max, **26 total cost** |
-| Cost | +1 per consecutive year kept |
-| **Cost on re-draft** | **RESETS TO 1** — for anyone, including his old team |
+| Cost | **Length of the player's current unbroken run of consecutive keep-seasons, counting the upcoming one.** First keep = 1; kept N years running = N. See exact mechanic below. |
+| **Cost carries on trade** | **YES.** Cost follows the *player* (tracked by name, team-independent) — a trade never resets it. The buyer inherits the full escalated cost. |
+| **Cost on release + re-draft** | **RESETS TO 1** — releasing breaks the streak; re-drafted later he's a first-time keep. For anyone, including his old team. |
+| **Non-consecutive keep** | **Resets the streak.** A single skipped season drops the run to zero; the next keep is cost 1 again. |
 | Non-kept players | Return to the draft pool; anyone may draft them |
-| Draft | **11 rounds** (20 roster − 9 keepers) × 12 teams = **132 picks** |
-| Draft order | Picks **1–6 from the plug-golf side-game**; 7–12 reverse standings off the playoff bracket |
+| Draft | **11 rounds** (20 roster − 9 keepers) × 12 teams = **132 picks**, **linear** (round 2 runs in the same slot order as round 1) |
+| Draft order — picks 1–6 | The **plug-golf golf side-game**, contested by the 6 non-playoff teams (best golf score = 1.01) |
+| Draft order — picks 7–12 | The 6 playoff teams, grouped by how far they advanced, **winner of each consolation matchup picks before its loser**: 5th-place game winner **1.07** / loser **1.08**; 3rd-place game winner **1.09** / loser **1.10**; championship winner (champion) **1.11** / runner-up **1.12** |
 | Draft order locks | **August 1** |
-| Keepers lock | **August 31** ← selling deadline for at-risk players |
+| Keepers lock | **1 week before the draft date, once the draft date is set.** 2026: draft **Mon Sep 7** → lock **Aug 31**. ← selling deadline for at-risk players |
 | Cap timing | Binds **only at keeper selection**. Never in-season |
 | In-season | No roster limits, no trade limits |
 
 **The cap is a one-day-a-year constraint.** That is the most important fact about this league.
+
+**Draft-order sourcing (exact stroke logic in `../plug-golf/tracker.py`):** picks **1–6** are the bottom-6 teams' finish in a real **mini-golf event**, handicapped by roster strength — the *weakest* roster (fewest FantasyPros top-50 players) gets the **fewest** strokes (+0, biggest advantage), the best roster +15; lowest **adjusted score** (golf + strokes) wins **1.01**, and the standing freezes **Aug 1**. Bottom-6 membership is **set by hand** (decided partly outside Sleeper, so it can't be derived from standings — it's the `BOTTOM_6` map in `tracker.py`). Picks **7–12** come from the playoff bracket per the table above.
+
+#### Keeper cost — the exact mechanic (ground truth: the Keepers-tab `Count` formula)
+
+The authoritative cost definition is **not** this prose — it's the `Count` column formula in the plug-golf **Keepers** tab (one column per season, "Keepers 2016" … "Keepers YYYY"; `../plug-golf/keepers.py` populates each year's column at the lock). If prose and formula ever disagree, **the formula wins** — read it (`Count` is a nested `1+IF(COUNTIF(<year col>,name)=1, …)` chain walking backward through the year columns).
+
+What it computes, in words:
+
+> **Cost to keep a player in season Y = the number of consecutive seasons he will have been kept, counting Y.**
+
+- Not in last season's column (first-time keep) → **1**.
+- Kept every season for an unbroken run → that run's length (e.g. Derrick Henry, kept 2017-2026 = 10 running → **cost 10**).
+- The lookup is by **player name across the yearly columns** — it has no concept of team. So: **trading a player carries his cost** (his streak is unbroken); **releasing him** (he falls out of a season's column) **resets it**; **skipping a year** resets it. This is why trade-carry, re-draft-reset, and non-consecutive-reset are all the *same* rule, not three separate ones.
 
 #### What the reset rule means
 
@@ -270,8 +287,32 @@ Guide rankings baseline: half PPR, 12-team, 1QB/2RB/3WR/1TE/1FLEX; auction value
 
 ## Data & Tooling
 
+### The daily snapshot — start here every session
+
+**One refresh a day, one file to read, one-call answers.** Do not re-derive league state from
+scratch and do not call the Sleeper API for rosters/cost/picks — that's the token-burn/stale-data
+failure this workflow exists to kill (`/tmp/k2.pkl` is **dead**; it caused the Jaylen-Waddle-on-the-
+wrong-team bug).
+
+- **Orient in one read:** `python reference/plugs_model.py brief` (or open `reference/league-brief.md`)
+  — every team's optimal-9 / cost / slack / bar / at-risk, my full roster, my picks.
+- **Analyze from the cache:** `load_league()` reads `reference/snapshot.json` and **self-refreshes if
+  >24h old** (runs `refresh.py` once). `plugs_model.py team "<name>"` and `... sweep` are one-call
+  views. Novel trade math: a short script that imports the model — still zero network when fresh.
+- **What's in the snapshot:** rosters + keeper cost + **draft picks** + KTC price + all three experts +
+  Market Score, merged. Picks are the **`PICK` rows under each team in the Roster Costs tab** — board
+  slot `round.slot` once the order is locked (`2.09 | PICK | PAS`), bare `R5` before it's set; snapshot
+  stores `board`, `round`, and origin `from` per pick. Never the Sleeper API.
+- **The refresh (`reference/refresh.py`)** pulls the sheet (Roster Costs [players + PICK rows] / FP
+  Rankings) + KTC + local CSVs. It runs **both** on the daily plug-golf Action's schedule (that Action's
+  `roster_costs.py` now also lists each team's picks) **and** on-demand when the snapshot is stale. It
+  notes non-DEF players outside KTC's pool to stderr rather than silently dropping them.
+- Sleeper API is still authoritative for **settings** and for a manual spot-check before a high-stakes
+  call — but not the routine per-question path.
+
 | Source | Role | Where |
 |---|---|---|
+| **Daily snapshot** | **The merged read for every question** | `reference/snapshot.json` + `league-brief.md` (via `refresh.py`) |
 | **KTC** | **PRICE** — market perception, acceptance | `reference/fetch-ktc.py` → `ktc-values.json` |
 | **ETR** | VALUE — expert (dynasty) | `Dynasty Rankings.csv` (`SF/TE Prem` col) |
 | **Dynasty Nerds** | VALUE — expert (dynasty) | `dynasty_rankings_sflex.csv` |
@@ -280,7 +321,7 @@ Guide rankings baseline: half PPR, 12-team, 1QB/2RB/3WR/1TE/1FLEX; auction value
 | **JJ tiers** | Redraft/1QB rankings + tier breaks | `tiers-2026.csv` |
 | **Late-Round Guide** | Process/mindset layer | PDF + `reference/late-round-2026-*` |
 | **Sleeper API** | Authoritative live settings/rosters | `api.sleeper.app/v1/league/<id>` |
-| **`../plug-golf`** | Keeper costs, roster costs, trade radar, golf game | that repo's README |
+| **`../plug-golf`** | Keeper costs, roster costs, trade radar, golf game | README; **cost ground truth = the Keepers-tab `Count` formula / `keepers.py`** (see Keeper cost mechanic above) |
 | Rotowire | Injury reports, depth charts, beat notes | — |
 | KTC / Discord | Sharp community takes, ADP shifts | — |
 
@@ -320,7 +361,7 @@ Service account key at `../plug-golf/credentials.json` (gitignored, local-only).
 
 | Spreadsheet | ID | Tabs |
 |---|---|---|
-| **The League of Plugs tracker** (shared with league) | `1Au0mnk2i76NZ1bF4v_V3YMeDtEUso0VEE7IXV12w8O4` | Standings, Bottom 6 Ranking, FP Rankings, Rosters, Keepers, Roster Costs |
+| **The League of Plugs tracker** (shared with league) | `1Au0mnk2i76NZ1bF4v_V3YMeDtEUso0VEE7IXV12w8O4` | Standings, Bottom 6 Ranking, FP Rankings, Rosters, Keepers, Roster Costs (players + draft picks) |
 | **Trade strategy doc** (**private — league must not see**) | `1wgg8DWfA6mvYRcHHqq9G88T3najbtu1-6XinzCdqzwI` | Trade Radar |
 
 ```python
@@ -332,9 +373,9 @@ gc = gspread.authorize(Credentials.from_service_account_file(
             "https://www.googleapis.com/auth/drive.readonly"]))
 ```
 
-**Layout:** `Roster Costs` and `Trade Radar` lay teams side-by-side in 4-column blocks (`Player | Pos-or-FP-Rank | Cost | spacer`), team name in row 0. Stride `range(0, len(row0), 4)`.
+**Layout:** `Roster Costs` and `Trade Radar` lay teams side-by-side in 4-column blocks (`Player|Pos|Cost` or FP-rank, plus a spacer), team name in row 0. Stride `range(0, len(row0), 4)`. In `Roster Costs`, draft picks follow each team's players as `PICK` rows (`2.09 | PICK | <origin team>` when the board is locked, else `R5`). `refresh.py` already parses all of this — don't re-hand-roll the stride.
 
-**Freshness:** the GitHub Action now runs against the **2026** league (`../plug-golf` `tracker.py` reads `LEAGUE_ID` from env, defaulting to `1367160708269117440`; fixed 2026-07-22). So the tabs reflect 2026 rosters after each Action run. Still worth a Sleeper API spot-check before a high-stakes call, since the sheet only refreshes when the Action runs — but the systematic 2025 staleness is gone.
+**Freshness:** the daily GitHub Action (`../plug-golf/run_all.py`) runs against the **2026** league and refreshes Standings/Bottom 6/Roster Costs (players + picks)/Trade Radar in one pull. `refresh.py` reads those tabs into the snapshot. The snapshot self-refreshes if >24h old; a Sleeper API spot-check is still worth it before a high-stakes call, since the sheet only moves when the Action (or a manual `run_all.py`) runs.
 
 ---
 

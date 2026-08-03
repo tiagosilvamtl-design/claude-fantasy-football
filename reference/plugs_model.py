@@ -49,7 +49,8 @@ Usage:
     from plugs_model import load_league, optimal_nine, at_risk, keeper_bar
     from plugs_model import value_table          # price vs value, all sources
 """
-import json, pickle, re, subprocess, sys
+import json, re, subprocess, sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 CAP = 26
@@ -307,35 +308,87 @@ def keep_or_redraft(player, my_next_pick_overall, pool_rank):
             f"re-acquiring resets him to cost 1, saving {player['cost'] - 1}")
 
 
-def load_league(costs_pkl="/tmp/k2.pkl"):
-    """Merge live KTC onto rosters+costs.
+SNAPSHOT = HERE / "snapshot.json"
 
-    Roster costs come from the plug-golf 'Roster Costs' sheet, which is built
-    from the 2025 league id (the GH Action is stale). Harmless while 2026 is
-    pre_draft with identical rosters — re-verify against the Sleeper API
-    before trusting for a real 2026 decision.
+
+def load_snapshot(path=SNAPSHOT, max_age_hours=24, auto_refresh=True):
+    """The single source of truth: rosters/cost/picks/value merged once a day.
+
+    Reads reference/snapshot.json (built by refresh.py from the sheet + KTC +
+    expert CSVs). If it's missing or older than max_age_hours, refresh.py is run
+    once (auto_refresh) so a session is always fresh but re-pulls at most daily.
+    NEVER reads the Sleeper API or the dead /tmp/k2.pkl.
     """
-    K, meta = ktc()
-    teams = pickle.load(open(costs_pkl, "rb"))
-    out = {}
-    for t, ps in teams.items():
-        r = {}
-        for n, tup in ps.items():
-            k = K.get(norm(n))
-            if not k:
-                continue
-            r[k["name"]] = {"pos": k["pos"], "ktc": k["ktc_sf"], "cost": tup[2],
-                            "age": k["age"], "rank": k["rank_sf"]}
-        out[t] = r
-    return out, meta["fetched"]
+    def stale(snap):
+        age = (datetime.now(timezone.utc)
+               - datetime.fromisoformat(snap["fetched_at"])).total_seconds() / 3600
+        return age > max_age_hours
+
+    snap = json.loads(path.read_text()) if path.exists() else None
+    if snap is None or stale(snap):
+        if auto_refresh:
+            print("snapshot missing/stale — running refresh.py ...", file=sys.stderr)
+            subprocess.run([sys.executable, str(HERE / "refresh.py")], check=True)
+            snap = json.loads(path.read_text())
+        elif snap is not None:
+            print("WARNING: snapshot is stale — run `python reference/refresh.py`",
+                  file=sys.stderr)
+        else:
+            sys.exit("no snapshot.json — run `python reference/refresh.py`")
+    return snap
+
+
+def load_league(**kw):
+    """(league, fetched_at) from the snapshot. league = {team: {name: {...}}}."""
+    snap = load_snapshot(**kw)
+    league = {t: {n: dict(p) for n, p in ps.items()} for t, ps in snap["teams"].items()}
+    return league, snap["fetched_at"]
+
+
+def _find_team(league, query):
+    q = query.lower()
+    for t in league:
+        if q in t.lower():
+            return t
+    sys.exit(f"no team matching {query!r}. teams: {list(league)}")
 
 
 if __name__ == "__main__":
-    league, fetched = load_league()
-    print(f"KTC fetched {fetched}\n")
-    print(f"{'team':30} {'opt9':>7} {'cost':>5} {'bar':>5} {'at-risk':>8}")
-    for t, ps in sorted(league.items(), key=lambda x: -optimal_nine(x[1])[0]):
-        v, c, sel = optimal_nine(ps)
-        ar = at_risk(ps)
-        me = " *" if "Jaguar" in t else "  "
-        print(f"{t:28}{me} {v:>7} {c:>5} {keeper_bar(ps):>5} {sum(p['ktc'] for p in ar.values()):>8}")
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "standings"
+
+    if cmd == "brief":
+        print((HERE / "league-brief.md").read_text())
+
+    elif cmd == "team":
+        league, fetched = load_league()
+        team = _find_team(league, sys.argv[2])
+        ps = league[team]
+        _, _, nine = optimal_nine(ps)
+        print(f"{team}  (KTC {fetched})\n")
+        for n, p in sorted(ps.items(), key=lambda x: (x[1]["cost"], -x[1]["ktc"])):
+            keep = "KEEP" if n in nine else "    "
+            print(f"  {keep} {n:<24} {p['pos']:<3} cost {p['cost']:<2} "
+                  f"ktc {p['ktc']:>5}  val {p['value']:>6}  gap {p['gap']:>+6}")
+
+    elif cmd == "sweep":
+        vt = value_table()
+        rows = sorted(vt.values(), key=lambda x: -x["gap"])
+        print("Biggest expert-over-market gaps (BUY):")
+        for r in rows[:15]:
+            print(f"  {r['name']:<24} {r['pos']:<3} gap {r['gap']:>+6} "
+                  f"(price {r['price']}, value {r['value']}, spread {r['spread']})")
+        print("\nBiggest market-over-expert gaps (SELL):")
+        for r in rows[-15:]:
+            print(f"  {r['name']:<24} {r['pos']:<3} gap {r['gap']:>+6} "
+                  f"(price {r['price']}, value {r['value']}, spread {r['spread']})")
+
+    else:  # standings
+        league, fetched = load_league()
+        print(f"snapshot {fetched}\n")
+        print(f"{'team':30} {'opt9':>7} {'cost':>5} {'bar':>5} {'at-risk':>8}")
+        for t, ps in sorted(league.items(), key=lambda x: -optimal_nine(x[1])[0]):
+            v, c, sel = optimal_nine(ps)
+            ar = at_risk(ps)
+            me = " *" if "Jaguar" in t else "  "
+            print(f"{t:28}{me} {v:>7} {c:>5} {keeper_bar(ps):>5} "
+                  f"{sum(p['ktc'] for p in ar.values()):>8}")

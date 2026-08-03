@@ -8,5 +8,10 @@ reference/late-round-*-text.md
 # rather than committing a copy that's stale within hours.
 reference/ktc-values.json
 
+# Daily snapshot + brief — derived, rebuilt by reference/refresh.py once a day.
+# Same rule as ktc-values.json: regenerate, don't commit a stale copy.
+reference/snapshot.json
+reference/league-brief.md
+
 # macOS noise
 .DS_Store
