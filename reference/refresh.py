@@ -28,17 +28,39 @@ from pathlib import Path
 import gspread
 from google.oauth2.service_account import Credentials
 
-from plugs_model import (CAP, SLOTS, at_risk, keeper_bar, norm, optimal_nine,
-                         value_table)
+from plugs_model import (CAP, LEAGUE_2026, ME, SLOTS, at_risk, keeper_bar, norm,
+                         optimal_nine, value_table)
 
 HERE = Path(__file__).parent
 CREDS = HERE.parent.parent / "plug-golf" / "credentials.json"
 SHEET_ID = "1Au0mnk2i76NZ1bF4v_V3YMeDtEUso0VEE7IXV12w8O4"
 SNAPSHOT = HERE / "snapshot.json"
 BRIEF = HERE / "league-brief.md"
-MY_TEAM = "Jaguar Hunter"
+# My team is identified by stable user_id (ME), NOT by display name — the name
+# changes when Tiago renames the team on Sleeper. This is only a last-known
+# fallback if the live lookup fails; resolve_my_team() is the source of truth.
+MY_TEAM_FALLBACK = "Des Jaguars pis Bowser"
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets",
           "https://www.googleapis.com/auth/drive.readonly"]
+
+
+def resolve_my_team():
+    """My current team NAME, looked up from Sleeper by stable user_id so a rename
+    can't silently empty the brief. Uses the same team_name-or-display_name rule
+    roster_costs.py uses to build the sheet, so the two match. Falls back to the
+    last-known name on any failure."""
+    import urllib.request
+    try:
+        with urllib.request.urlopen(
+                f"https://api.sleeper.app/v1/league/{LEAGUE_2026}/users", timeout=30) as r:
+            for u in json.load(r):
+                if u.get("user_id") == ME:
+                    return ((u.get("metadata") or {}).get("team_name")
+                            or u.get("display_name") or MY_TEAM_FALLBACK)
+    except Exception as e:
+        print(f"warn: couldn't resolve my team from Sleeper ({e}); using fallback "
+              f"'{MY_TEAM_FALLBACK}'", file=sys.stderr)
+    return MY_TEAM_FALLBACK
 
 
 # ── Sheet reads (stride-4 side-by-side blocks; see CLAUDE.md) ─────────────────
@@ -152,12 +174,16 @@ def build():
         for team, names in unmatched.items():
             print(f"  {team}: {', '.join(names)}", file=sys.stderr)
 
-    write_brief(snap)
+    my_team = resolve_my_team()
+    if my_team not in teams:
+        print(f"warn: my team '{my_team}' not in the snapshot (sheet may predate a "
+              f"rename) — brief's roster/picks sections will be empty this run", file=sys.stderr)
+    write_brief(snap, my_team)
     print(f"Wrote {BRIEF.name}", file=sys.stderr)
     return snap
 
 
-def write_brief(snap):
+def write_brief(snap, my_team):
     teams = {t: {n: p for n, p in ps.items()} for t, ps in snap["teams"].items()}
     lines = [f"# League of Plugs — brief",
              f"_snapshot {snap['fetched_at']} · KTC {snap['ktc_fetched']}_", "",
@@ -170,14 +196,14 @@ def write_brief(snap):
             continue
         v, c, _ = optimal_nine(ps)
         ar = at_risk(ps)
-        me = " ⭐" if t == MY_TEAM else ""
+        me = " ⭐" if t == my_team else ""
         lines.append(f"| {t}{me} | {v} | {c} | {CAP - c:+d} | {keeper_bar(ps)} | "
                      f"{sum(p['ktc'] for p in ar.values())} |")
 
-    mine = teams.get(MY_TEAM, {})
+    mine = teams.get(my_team, {})
     if mine:
         _, _, nine = optimal_nine(mine)
-        lines += ["", f"## {MY_TEAM} — roster (KEEP = optimal nine)", "",
+        lines += ["", f"## {my_team} — roster (KEEP = optimal nine)", "",
                   "| Keep | Player | Pos | Cost | KTC | Value | Gap |",
                   "|:--:|---|:--:|--:|--:|--:|--:|"]
         for n, p in sorted(mine.items(), key=lambda x: (x[1]["cost"], -x[1]["ktc"])):
@@ -185,12 +211,12 @@ def write_brief(snap):
             lines.append(f"| {keep} | {n} | {p['pos']} | {p['cost']} | {p['ktc']} | "
                          f"{p['value']} | {p['gap']:+d} |")
 
-    mypicks = snap["picks"].get(MY_TEAM, [])
+    mypicks = snap["picks"].get(my_team, [])
     if mypicks:
         held = ", ".join(p.get("board", f"R{p['round']}")
                          + ("" if p["from"] in ("own", "") else f" (from {p['from']})")
                          for p in mypicks)
-        lines += ["", f"## {MY_TEAM} — picks held", "", held]
+        lines += ["", f"## {my_team} — picks held", "", held]
 
     BRIEF.write_text("\n".join(lines) + "\n")
 

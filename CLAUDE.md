@@ -120,7 +120,7 @@ Both leagues are 12-team, **half PPR**, **superflex** — but their economies di
 
 ### The League of Plugs — my most important league
 
-**My team: Jaguar Hunter** (roster_id `10`). 2026 league `1367160708269117440`; 2025 predecessor `1182472182826283008`. Automations in `../plug-golf`.
+**My team: roster_id `10`** / user_id `470104804048236544` — the **stable** identity. The Sleeper **display name changes** when I rename (was "Jaguar Hunter", "Des Jaguars pis Bowser" as of 2026-08). Never key my team off the display name — `refresh.py`'s `resolve_my_team()` looks it up live by user_id, so the brief survives renames. 2026 league `1367160708269117440`; 2025 predecessor `1182472182826283008`. Automations in `../plug-golf`.
 
 | Setting | Value |
 |---|---|

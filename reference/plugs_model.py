@@ -56,7 +56,7 @@ from pathlib import Path
 CAP = 26
 SLOTS = 9
 LEAGUE_2026 = "1367160708269117440"
-ME = "470104804048236544"          # titi153 -> Jaguar Hunter, roster_id 10
+ME = "470104804048236544"          # titi153, roster_id 10 (display name changes on rename)
 HERE = Path(__file__).parent
 
 
